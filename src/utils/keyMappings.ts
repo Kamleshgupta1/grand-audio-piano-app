@@ -2,128 +2,65 @@
 export interface KeyMapping {
   key: string;
   note: string;
-  octave: number;
+  frequency: number;
   isBlack: boolean;
   position: number;
 }
 
-export const KEYBOARD_MAPPINGS: { [key: string]: string } = {
-  // First octave (C3-B3)
-  'Tab': 'C3',
-  '1': 'C#3',
-  'q': 'D3',
-  '2': 'D#3',
-  'w': 'E3',
-  'e': 'F3',
-  '4': 'F#3',
-  'r': 'G3',
-  '5': 'G#3',
-  't': 'A3',
-  '6': 'A#3',
-  'y': 'B3',
+// Piano key mappings with keyboard shortcuts
+export const keyMappings: KeyMapping[] = [
+  // Lower octave (C3-B3)
+  { key: 'z', note: 'C3', frequency: 130.81, isBlack: false, position: 0 },
+  { key: 's', note: 'C#3', frequency: 138.59, isBlack: true, position: 0.5 },
+  { key: 'x', note: 'D3', frequency: 146.83, isBlack: false, position: 1 },
+  { key: 'd', note: 'D#3', frequency: 155.56, isBlack: true, position: 1.5 },
+  { key: 'c', note: 'E3', frequency: 164.81, isBlack: false, position: 2 },
+  { key: 'v', note: 'F3', frequency: 174.61, isBlack: false, position: 3 },
+  { key: 'g', note: 'F#3', frequency: 185.00, isBlack: true, position: 3.5 },
+  { key: 'b', note: 'G3', frequency: 196.00, isBlack: false, position: 4 },
+  { key: 'h', note: 'G#3', frequency: 207.65, isBlack: true, position: 4.5 },
+  { key: 'n', note: 'A3', frequency: 220.00, isBlack: false, position: 5 },
+  { key: 'j', note: 'A#3', frequency: 233.08, isBlack: true, position: 5.5 },
+  { key: 'm', note: 'B3', frequency: 246.94, isBlack: false, position: 6 },
   
-  // Second octave (C4-B4) - Main octave
-  'u': 'C4',
-  '8': 'C#4',
-  'i': 'D4',
-  '9': 'D#4',
-  'o': 'E4',
-  'p': 'F4',
-  '-': 'F#4',
-  '[': 'G4',
-  '=': 'G#4',
-  ']': 'A4',
-  'Backspace': 'A#4',
-  '\\': 'B4',
+  // Main octave (C4-B4)
+  { key: 'q', note: 'C4', frequency: 261.63, isBlack: false, position: 7 },
+  { key: '2', note: 'C#4', frequency: 277.18, isBlack: true, position: 7.5 },
+  { key: 'w', note: 'D4', frequency: 293.66, isBlack: false, position: 8 },
+  { key: '3', note: 'D#4', frequency: 311.13, isBlack: true, position: 8.5 },
+  { key: 'e', note: 'E4', frequency: 329.63, isBlack: false, position: 9 },
+  { key: 'r', note: 'F4', frequency: 349.23, isBlack: false, position: 10 },
+  { key: '5', note: 'F#4', frequency: 369.99, isBlack: true, position: 10.5 },
+  { key: 't', note: 'G4', frequency: 392.00, isBlack: false, position: 11 },
+  { key: '6', note: 'G#4', frequency: 415.30, isBlack: true, position: 11.5 },
+  { key: 'y', note: 'A4', frequency: 440.00, isBlack: false, position: 12 },
+  { key: '7', note: 'A#4', frequency: 466.16, isBlack: true, position: 12.5 },
+  { key: 'u', note: 'B4', frequency: 493.88, isBlack: false, position: 13 },
   
-  // Third octave (C5-B5)
-  'CapsLock': 'C5',
-  's': 'C#5',
-  'a': 'D5',
-  'd': 'D#5',
-  's': 'E5',
-  'f': 'F5',
-  'g': 'F#5',
-  'h': 'G5',
-  'j': 'G#5',
-  'k': 'A5',
-  'l': 'A#5',
-  ';': 'B5',
-  
-  // Lower octave using ZXCV row
-  'z': 'C4',
-  's': 'C#4',
-  'x': 'D4',
-  'd': 'D#4',
-  'c': 'E4',
-  'v': 'F4',
-  'g': 'F#4',
-  'b': 'G4',
-  'h': 'G#4',
-  'n': 'A4',
-  'j': 'A#4',
-  'm': 'B4',
-  ',': 'C5',
-  'l': 'C#5',
-  '.': 'D5',
-  ';': 'D#5',
-  '/': 'E5',
-};
-
-export const PIANO_LAYOUT: KeyMapping[] = [
-  // C3 octave
-  { key: 'Tab', note: 'C3', octave: 3, isBlack: false, position: 0 },
-  { key: '1', note: 'C#3', octave: 3, isBlack: true, position: 0.5 },
-  { key: 'q', note: 'D3', octave: 3, isBlack: false, position: 1 },
-  { key: '2', note: 'D#3', octave: 3, isBlack: true, position: 1.5 },
-  { key: 'w', note: 'E3', octave: 3, isBlack: false, position: 2 },
-  { key: 'e', note: 'F3', octave: 3, isBlack: false, position: 3 },
-  { key: '4', note: 'F#3', octave: 3, isBlack: true, position: 3.5 },
-  { key: 'r', note: 'G3', octave: 3, isBlack: false, position: 4 },
-  { key: '5', note: 'G#3', octave: 3, isBlack: true, position: 4.5 },
-  { key: 't', note: 'A3', octave: 3, isBlack: false, position: 5 },
-  { key: '6', note: 'A#3', octave: 3, isBlack: true, position: 5.5 },
-  { key: 'y', note: 'B3', octave: 3, isBlack: false, position: 6 },
-  
-  // C4 octave (middle C)
-  { key: 'z', note: 'C4', octave: 4, isBlack: false, position: 7 },
-  { key: 's', note: 'C#4', octave: 4, isBlack: true, position: 7.5 },
-  { key: 'x', note: 'D4', octave: 4, isBlack: false, position: 8 },
-  { key: 'd', note: 'D#4', octave: 4, isBlack: true, position: 8.5 },
-  { key: 'c', note: 'E4', octave: 4, isBlack: false, position: 9 },
-  { key: 'v', note: 'F4', octave: 4, isBlack: false, position: 10 },
-  { key: 'g', note: 'F#4', octave: 4, isBlack: true, position: 10.5 },
-  { key: 'b', note: 'G4', octave: 4, isBlack: false, position: 11 },
-  { key: 'h', note: 'G#4', octave: 4, isBlack: true, position: 11.5 },
-  { key: 'n', note: 'A4', octave: 4, isBlack: false, position: 12 },
-  { key: 'j', note: 'A#4', octave: 4, isBlack: true, position: 12.5 },
-  { key: 'm', note: 'B4', octave: 4, isBlack: false, position: 13 },
-  
-  // C5 octave
-  { key: ',', note: 'C5', octave: 5, isBlack: false, position: 14 },
-  { key: 'l', note: 'C#5', octave: 5, isBlack: true, position: 14.5 },
-  { key: '.', note: 'D5', octave: 5, isBlack: false, position: 15 },
-  { key: ';', note: 'D#5', octave: 5, isBlack: true, position: 15.5 },
-  { key: '/', note: 'E5', octave: 5, isBlack: false, position: 16 },
+  // Upper octave (C5-B5)
+  { key: 'i', note: 'C5', frequency: 523.25, isBlack: false, position: 14 },
+  { key: '9', note: 'C#5', frequency: 554.37, isBlack: true, position: 14.5 },
+  { key: 'o', note: 'D5', frequency: 587.33, isBlack: false, position: 15 },
+  { key: '0', note: 'D#5', frequency: 622.25, isBlack: true, position: 15.5 },
+  { key: 'p', note: 'E5', frequency: 659.25, isBlack: false, position: 16 },
+  { key: '[', note: 'F5', frequency: 698.46, isBlack: false, position: 17 },
+  { key: '=', note: 'F#5', frequency: 739.99, isBlack: true, position: 17.5 },
+  { key: ']', note: 'G5', frequency: 783.99, isBlack: false, position: 18 },
 ];
 
-export const getNoteFromKey = (key: string): string | null => {
-  return KEYBOARD_MAPPINGS[key.toLowerCase()] || null;
+// Create a map for quick lookup
+export const keyToMapping = keyMappings.reduce((acc, mapping) => {
+  acc[mapping.key.toLowerCase()] = mapping;
+  return acc;
+}, {} as Record<string, KeyMapping>);
+
+// Get all available notes
+export const getAllNotes = (): string[] => {
+  return keyMappings.map(mapping => mapping.note);
 };
 
-export const getKeyFromNote = (note: string): string | null => {
-  const entry = Object.entries(KEYBOARD_MAPPINGS).find(([_, n]) => n === note);
-  return entry ? entry[0] : null;
-};
-
-export const isBlackKey = (note: string): boolean => {
-  return note.includes('#');
-};
-
-export const getOctaveFromNote = (note: string): number => {
-  return parseInt(note.slice(-1));
-};
-
-export const getNoteNameFromNote = (note: string): string => {
-  return note.slice(0, -1);
+// Get frequency for a note
+export const getFrequency = (note: string): number => {
+  const mapping = keyMappings.find(m => m.note === note);
+  return mapping ? mapping.frequency : 440;
 };
