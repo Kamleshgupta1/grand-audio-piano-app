@@ -6,7 +6,7 @@ import { AudioManager } from '@/utils/audioManager';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Piano, Music, Headphones, Info } from 'lucide-react';
+import { Piano, Music, Volume2, Settings, Play, Pause, Square } from 'lucide-react';
 import { toast } from 'sonner';
 
 const Index = () => {
@@ -15,12 +15,12 @@ const Index = () => {
   const [showLabels, setShowLabels] = useState(true);
   const [recording, setRecording] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
+  const [showControls, setShowControls] = useState(false);
 
   useEffect(() => {
-    // Initialize audio context on first user interaction
     const initializeAudio = () => {
       setIsInitialized(true);
-      toast.success('Virtual Piano initialized! Ready to play.');
+      toast.success('Virtual Piano Ready!');
       document.removeEventListener('click', initializeAudio);
       document.removeEventListener('keydown', initializeAudio);
     };
@@ -35,7 +35,6 @@ const Index = () => {
   }, []);
 
   useEffect(() => {
-    // Handle sustain pedal with spacebar
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === ' ' && !event.repeat) {
         event.preventDefault();
@@ -71,51 +70,57 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 text-white">
-      {/* Header */}
-      <header className="relative overflow-hidden border-b border-gray-800">
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 via-purple-600/10 to-pink-600/10" />
-        <div className="relative container mx-auto px-4 py-8">
-          <div className="text-center space-y-4">
-            <div className="flex items-center justify-center gap-3 mb-4">
-              <Piano className="w-8 h-8 text-blue-400" />
-              <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
-                Virtual Piano
-              </h1>
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
+      {/* Header - VirtualPiano.net style */}
+      <header className="border-b border-gray-200 bg-white/80 backdrop-blur-sm sticky top-0 z-50">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Piano className="w-8 h-8 text-blue-600" />
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">Virtual Piano</h1>
+                <p className="text-sm text-gray-600">Play piano in your browser</p>
+              </div>
             </div>
-            <p className="text-lg text-gray-300 max-w-2xl mx-auto">
-              Professional online piano with realistic sound, recording capabilities, and advanced features.
-              Play with your mouse, keyboard, or touch device.
-            </p>
             
-            <div className="flex flex-wrap items-center justify-center gap-4 text-sm">
-              <Badge variant="secondary" className="flex items-center gap-1">
-                <Music className="w-3 h-3" />
-                88 Keys
-              </Badge>
-              <Badge variant="secondary" className="flex items-center gap-1">
-                <Headphones className="w-3 h-3" />
-                HQ Audio
-              </Badge>
-              <Badge variant="secondary" className="flex items-center gap-1">
-                <Piano className="w-3 h-3" />
-                Recording
-              </Badge>
+            <div className="flex items-center gap-3">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowControls(!showControls)}
+              >
+                <Settings className="w-4 h-4 mr-2" />
+                {showControls ? 'Hide' : 'Show'} Controls
+              </Button>
+              
+              {recording && (
+                <Badge variant="destructive" className="animate-pulse">
+                  <Square className="w-3 h-3 mr-1" />
+                  REC
+                </Badge>
+              )}
+              
+              {sustainActive && (
+                <Badge variant="secondary">
+                  <Volume2 className="w-3 h-3 mr-1" />
+                  Sustain
+                </Badge>
+              )}
             </div>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 py-6">
         {!isInitialized && (
-          <Card className="mb-6 bg-blue-900/20 border-blue-500/30">
+          <Card className="mb-6 bg-blue-50 border-blue-200">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <Info className="w-5 h-5 text-blue-400" />
+                <Music className="w-5 h-5 text-blue-600" />
                 <div>
-                  <p className="text-blue-100 font-medium">Ready to Play</p>
-                  <p className="text-blue-200/80 text-sm">
-                    Click anywhere or press any key to initialize the audio system and start playing!
+                  <p className="text-blue-900 font-medium">Click to Start Playing</p>
+                  <p className="text-blue-700 text-sm">
+                    Click anywhere or press any key to initialize audio and start playing piano
                   </p>
                 </div>
               </div>
@@ -123,18 +128,22 @@ const Index = () => {
           </Card>
         )}
 
-        {/* Control Panel */}
-        <ControlPanel
-          audioManager={audioManager}
-          sustainActive={sustainActive}
-          onSustainToggle={setSustainActive}
-          showLabels={showLabels}
-          onShowLabelsToggle={setShowLabels}
-          recording={recording}
-          onRecordingToggle={handleRecordingToggle}
-        />
+        {/* Control Panel - Collapsible */}
+        {showControls && (
+          <div className="mb-6">
+            <ControlPanel
+              audioManager={audioManager}
+              sustainActive={sustainActive}
+              onSustainToggle={setSustainActive}
+              showLabels={showLabels}
+              onShowLabelsToggle={setShowLabels}
+              recording={recording}
+              onRecordingToggle={handleRecordingToggle}
+            />
+          </div>
+        )}
 
-        {/* Piano Keyboard */}
+        {/* Piano Keyboard - Main focus */}
         <div className="mb-8">
           <PianoKeyboard
             audioManager={audioManager}
@@ -143,44 +152,67 @@ const Index = () => {
           />
         </div>
 
-        {/* Instructions */}
-        <Card className="bg-card/30 backdrop-blur-sm border-border/30">
+        {/* Simple Instructions - VirtualPiano style */}
+        <Card className="bg-white/60 backdrop-blur-sm border-gray-200">
           <CardContent className="p-6">
-            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-              <Info className="w-5 h-5" />
-              How to Play
-            </h3>
-            <div className="grid md:grid-cols-2 gap-6 text-sm text-gray-300">
+            <div className="grid md:grid-cols-2 gap-8">
               <div>
-                <h4 className="font-medium text-white mb-2">Keyboard Shortcuts:</h4>
-                <ul className="space-y-1">
-                  <li><code className="bg-gray-800 px-1 rounded">Z-M</code> - White keys (C4-B4)</li>
-                  <li><code className="bg-gray-800 px-1 rounded">S,D,G,H,J</code> - Black keys</li>
-                  <li><code className="bg-gray-800 px-1 rounded">Space</code> - Sustain pedal</li>
-                  <li><code className="bg-gray-800 px-1 rounded">Q-Y</code> - Upper octave</li>
-                </ul>
+                <h3 className="font-semibold text-gray-900 mb-3">Keyboard Shortcuts</h3>
+                <div className="space-y-2 text-sm text-gray-700">
+                  <div className="flex justify-between">
+                    <span>White Keys:</span>
+                    <code className="bg-gray-100 px-2 py-1 rounded text-xs">Z X C V B N M</code>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Black Keys:</span>
+                    <code className="bg-gray-100 px-2 py-1 rounded text-xs">S D G H J</code>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Sustain:</span>
+                    <code className="bg-gray-100 px-2 py-1 rounded text-xs">Spacebar</code>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Upper Keys:</span>
+                    <code className="bg-gray-100 px-2 py-1 rounded text-xs">Q W E R T Y U I O P</code>
+                  </div>
+                </div>
               </div>
+              
               <div>
-                <h4 className="font-medium text-white mb-2">Features:</h4>
-                <ul className="space-y-1">
-                  <li>🎹 Professional piano sound</li>
-                  <li>🎵 Recording and playback</li>
-                  <li>🎚️ Volume and sustain controls</li>
-                  <li>💾 Export/import recordings</li>
-                  <li>📱 Mobile and touch support</li>
-                </ul>
+                <h3 className="font-semibold text-gray-900 mb-3">Features</h3>
+                <div className="space-y-2 text-sm text-gray-700">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <span>Realistic Salamander Grand Piano samples</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <span>Record and playback your performances</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <span>Sustain pedal support</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <span>Volume control and audio settings</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <span>Export/import recordings</span>
+                  </div>
+                </div>
               </div>
             </div>
           </CardContent>
         </Card>
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-gray-800 mt-12">
+      {/* Footer - Clean and minimal */}
+      <footer className="border-t border-gray-200 bg-white/80 backdrop-blur-sm mt-12">
         <div className="container mx-auto px-4 py-6">
-          <div className="text-center text-gray-400 text-sm">
-            <p>Virtual Piano - Professional Online Piano Instrument</p>
-            <p className="mt-1">Play, record, and share your music creations</p>
+          <div className="text-center text-gray-600 text-sm">
+            <p>Virtual Piano - High Quality Online Piano Instrument</p>
           </div>
         </div>
       </footer>

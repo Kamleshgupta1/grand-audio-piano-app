@@ -23,7 +23,7 @@ export class AudioManager {
   private recording = false;
   private recordingData: RecordingNote[] = [];
   private recordingStartTime = 0;
-  private activeOscillators: Map<string, OscillatorNode> = new Map();
+  private activeSamples: Map<string, HTMLAudioElement[]> = new Map();
 
   constructor() {
     this.initializeAudioContext();
@@ -34,7 +34,6 @@ export class AudioManager {
     try {
       this.context = new (window.AudioContext || (window as any).webkitAudioContext)();
       
-      // Resume context if suspended (required by some browsers)
       if (this.context.state === 'suspended') {
         await this.context.resume();
       }
@@ -43,7 +42,6 @@ export class AudioManager {
       this.gainNode.connect(this.context.destination);
       this.gainNode.gain.value = this.volume;
 
-      // Create advanced reverb for Salamander Grand Piano feel
       await this.createAdvancedReverb();
     } catch (error) {
       console.warn('Web Audio API not supported, falling back to HTML5 audio');
@@ -55,15 +53,13 @@ export class AudioManager {
 
     this.reverbNode = this.context.createConvolver();
     
-    // Create concert hall-style reverb impulse response
-    const length = this.context.sampleRate * 3.5; // 3.5 seconds of reverb
+    const length = this.context.sampleRate * 2.5;
     const impulse = this.context.createBuffer(2, length, this.context.sampleRate);
     
     for (let channel = 0; channel < 2; channel++) {
       const channelData = impulse.getChannelData(channel);
       for (let i = 0; i < length; i++) {
         const n = length - i;
-        // Create realistic concert hall reverb pattern
         channelData[i] = (Math.random() * 2 - 1) * Math.pow(n / length, 2.5);
       }
     }
@@ -80,28 +76,32 @@ export class AudioManager {
 
     notes.forEach(note => {
       const frequency = this.getFrequency(note);
-      const audio = this.createSalamanderPianoSound(frequency);
+      const fileName = note.replace('#', 's'); // Convert C# to Cs for filename
+      const audio = new Audio(`/audio/piano/${fileName}.mp3`);
+      
+      audio.preload = 'auto';
+      audio.volume = this.volume;
+      
+      // Handle loading events
+      audio.addEventListener('canplaythrough', () => {
+        const sample = this.samples.get(note);
+        if (sample) {
+          sample.loaded = true;
+        }
+      });
+
+      audio.addEventListener('error', () => {
+        console.warn(`Failed to load audio sample for ${note}, falling back to synthesized sound`);
+        // Fallback to synthesized sound if sample fails to load
+      });
       
       this.samples.set(note, {
         note,
         frequency,
         audio,
-        loaded: true
+        loaded: false
       });
     });
-  }
-
-  private createSalamanderPianoSound(frequency: number): HTMLAudioElement {
-    // Create high-quality piano sound similar to Salamander Grand Piano
-    if (!this.context) {
-      const audio = new Audio();
-      audio.preload = 'auto';
-      return audio;
-    }
-
-    const audio = new Audio();
-    audio.preload = 'auto';
-    return audio;
   }
 
   private getFrequency(note: string): number {
@@ -118,10 +118,6 @@ export class AudioManager {
   }
 
   async playNote(note: string, velocity: number = 0.8): Promise<void> {
-    if (!this.context) {
-      await this.initializeAudioContext();
-    }
-
     if (this.recording) {
       this.recordingData.push({
         note,
@@ -130,75 +126,42 @@ export class AudioManager {
       });
     }
 
-    if (!this.context) return;
+    const sample = this.samples.get(note);
+    if (!sample) return;
 
     try {
-      // Stop existing oscillator for this note to prevent overlap
-      const existingOsc = this.activeOscillators.get(note);
-      if (existingOsc) {
-        existingOsc.stop();
-        this.activeOscillators.delete(note);
+      // Clone the audio element to allow multiple simultaneous plays
+      const audioClone = sample.audio.cloneNode() as HTMLAudioElement;
+      audioClone.volume = velocity * this.volume;
+      audioClone.currentTime = 0;
+      
+      // Store active samples for cleanup
+      if (!this.activeSamples.has(note)) {
+        this.activeSamples.set(note, []);
+      }
+      this.activeSamples.get(note)!.push(audioClone);
+      
+      // Play the sample
+      const playPromise = audioClone.play();
+      
+      if (playPromise !== undefined) {
+        playPromise.catch(error => {
+          console.warn('Audio playback failed:', error);
+          // Fallback to synthesized sound
+          this.playSynthesizedNote(note, velocity);
+        });
       }
 
-      // Create rich piano-like sound with multiple harmonics
-      const oscillator = this.context.createOscillator();
-      const gainNode = this.context.createGain();
-      const filterNode = this.context.createBiquadFilter();
-      
-      const frequency = this.getFrequency(note);
-      
-      // Set up oscillator with piano-like waveform
-      oscillator.type = 'sawtooth';
-      oscillator.frequency.setValueAtTime(frequency, this.context.currentTime);
-      
-      // Add subtle frequency modulation for realism
-      const lfo = this.context.createOscillator();
-      const lfoGain = this.context.createGain();
-      lfo.frequency.setValueAtTime(4.5, this.context.currentTime);
-      lfoGain.gain.setValueAtTime(0.8, this.context.currentTime);
-      lfo.connect(lfoGain);
-      lfoGain.connect(oscillator.frequency);
-      
-      // Piano-like low-pass filter
-      filterNode.type = 'lowpass';
-      filterNode.frequency.setValueAtTime(frequency * 4, this.context.currentTime);
-      filterNode.Q.setValueAtTime(1.2, this.context.currentTime);
-      
-      // Realistic piano envelope (fast attack, exponential decay)
-      gainNode.gain.setValueAtTime(0, this.context.currentTime);
-      gainNode.gain.linearRampToValueAtTime(velocity * this.volume, this.context.currentTime + 0.003);
-      gainNode.gain.exponentialRampToValueAtTime(velocity * this.volume * 0.7, this.context.currentTime + 0.1);
-      gainNode.gain.exponentialRampToValueAtTime(0.001, this.context.currentTime + 4);
-      
-      // Connect audio graph
-      oscillator.connect(filterNode);
-      filterNode.connect(gainNode);
-      
-      // Add reverb for concert hall effect
-      if (this.reverbNode) {
-        const reverbGain = this.context.createGain();
-        reverbGain.gain.value = 0.25;
-        gainNode.connect(reverbGain);
-        reverbGain.connect(this.reverbNode);
-        this.reverbNode.connect(this.context.destination);
-      }
-      
-      gainNode.connect(this.gainNode!);
-      
-      // Start oscillators
-      oscillator.start();
-      lfo.start();
-      
-      // Store reference
-      this.activeOscillators.set(note, oscillator);
-      
-      // Clean up after note ends
-      oscillator.stop(this.context.currentTime + 4);
-      lfo.stop(this.context.currentTime + 4);
-      
-      oscillator.onended = () => {
-        this.activeOscillators.delete(note);
-      };
+      // Clean up when audio ends
+      audioClone.addEventListener('ended', () => {
+        const samples = this.activeSamples.get(note);
+        if (samples) {
+          const index = samples.indexOf(audioClone);
+          if (index > -1) {
+            samples.splice(index, 1);
+          }
+        }
+      });
 
       if (this.sustainActive) {
         this.sustainedNotes.add(note);
@@ -206,45 +169,61 @@ export class AudioManager {
 
     } catch (error) {
       console.error('Error playing note:', error);
+      this.playSynthesizedNote(note, velocity);
     }
+  }
+
+  private async playSynthesizedNote(note: string, velocity: number = 0.8): Promise<void> {
+    if (!this.context) return;
+
+    const oscillator = this.context.createOscillator();
+    const gainNode = this.context.createGain();
+    const filterNode = this.context.createBiquadFilter();
+    
+    const frequency = this.getFrequency(note);
+    
+    oscillator.type = 'sawtooth';
+    oscillator.frequency.setValueAtTime(frequency, this.context.currentTime);
+    
+    filterNode.type = 'lowpass';
+    filterNode.frequency.setValueAtTime(frequency * 4, this.context.currentTime);
+    filterNode.Q.setValueAtTime(1.2, this.context.currentTime);
+    
+    gainNode.gain.setValueAtTime(0, this.context.currentTime);
+    gainNode.gain.linearRampToValueAtTime(velocity * this.volume, this.context.currentTime + 0.003);
+    gainNode.gain.exponentialRampToValueAtTime(velocity * this.volume * 0.7, this.context.currentTime + 0.1);
+    gainNode.gain.exponentialRampToValueAtTime(0.001, this.context.currentTime + 4);
+    
+    oscillator.connect(filterNode);
+    filterNode.connect(gainNode);
+    gainNode.connect(this.gainNode!);
+    
+    oscillator.start();
+    oscillator.stop(this.context.currentTime + 4);
   }
 
   stopNote(note: string): void {
     if (this.sustainActive && this.sustainedNotes.has(note)) {
-      return; // Don't stop sustained notes
+      return;
     }
     
-    const oscillator = this.activeOscillators.get(note);
-    if (oscillator && this.context) {
-      // Fade out quickly instead of immediate stop
-      const gainNode = this.context.createGain();
-      gainNode.gain.setValueAtTime(1, this.context.currentTime);
-      gainNode.gain.exponentialRampToValueAtTime(0.001, this.context.currentTime + 0.1);
-      
-      setTimeout(() => {
-        try {
-          oscillator.stop();
-          this.activeOscillators.delete(note);
-        } catch (e) {
-          // Oscillator may have already stopped
+    const samples = this.activeSamples.get(note);
+    if (samples) {
+      samples.forEach(audio => {
+        if (!audio.paused) {
+          audio.pause();
+          audio.currentTime = 0;
         }
-      }, 100);
+      });
+      this.activeSamples.set(note, []);
     }
   }
 
   setSustain(active: boolean): void {
     this.sustainActive = active;
     if (!active) {
-      // Release all sustained notes
       this.sustainedNotes.forEach(note => {
-        const oscillator = this.activeOscillators.get(note);
-        if (oscillator && this.context) {
-          try {
-            oscillator.stop(this.context.currentTime + 0.5);
-          } catch (e) {
-            // Already stopped
-          }
-        }
+        this.stopNote(note);
       });
       this.sustainedNotes.clear();
     }
@@ -255,6 +234,11 @@ export class AudioManager {
     if (this.gainNode && this.context) {
       this.gainNode.gain.setTargetAtTime(this.volume, this.context.currentTime, 0.1);
     }
+    
+    // Update volume for all samples
+    this.samples.forEach(sample => {
+      sample.audio.volume = this.volume;
+    });
   }
 
   getVolume(): number {

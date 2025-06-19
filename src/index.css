@@ -39,79 +39,68 @@ body {
   text-rendering: optimizeLegibility;
 }
 
-/* Piano specific styles */
+/* VirtualPiano.net Style Piano Keys */
 .piano-key-white {
-  @apply bg-white border border-gray-300 shadow-lg;
-  background: linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%);
+  background: linear-gradient(180deg, #ffffff 0%, #f8f9fa 50%, #e9ecef 100%);
+  border: 1px solid #dee2e6;
   border-radius: 0 0 8px 8px;
   box-shadow: 
-    0 4px 8px rgba(0, 0, 0, 0.1),
-    inset 0 1px 2px rgba(255, 255, 255, 0.8);
-  transition: all 0.05s ease-out;
+    0 6px 12px rgba(0, 0, 0, 0.1),
+    inset 0 1px 3px rgba(255, 255, 255, 0.8),
+    inset 0 -1px 1px rgba(0, 0, 0, 0.05);
+  transition: all 0.08s ease;
 }
 
 .piano-key-white:hover {
-  background: linear-gradient(180deg, #f8f9fa 0%, #e9ecef 100%);
+  background: linear-gradient(180deg, #f8f9fa 0%, #e9ecef 50%, #dee2e6 100%);
   transform: translateY(-1px);
   box-shadow: 
-    0 6px 12px rgba(0, 0, 0, 0.15),
-    inset 0 1px 2px rgba(255, 255, 255, 0.8);
-}
-
-.piano-key-white.pressed {
-  background: linear-gradient(180deg, #e9ecef 0%, #dee2e6 100%);
-  transform: translateY(2px) scale(0.98);
-  box-shadow: 
-    0 2px 4px rgba(0, 0, 0, 0.2),
-    inset 0 2px 4px rgba(0, 0, 0, 0.1);
+    0 8px 16px rgba(0, 0, 0, 0.15),
+    inset 0 1px 3px rgba(255, 255, 255, 0.9),
+    inset 0 -1px 1px rgba(0, 0, 0, 0.1);
 }
 
 .piano-key-black {
-  @apply bg-gray-900 border border-gray-800 shadow-xl;
-  background: linear-gradient(180deg, #2d3748 0%, #1a202c 100%);
+  background: linear-gradient(180deg, #343a40 0%, #212529 50%, #000000 100%);
+  border: 1px solid #000000;
   border-radius: 0 0 6px 6px;
   box-shadow: 
-    0 6px 12px rgba(0, 0, 0, 0.3),
-    inset 0 1px 2px rgba(255, 255, 255, 0.1);
-  transition: all 0.05s ease-out;
+    0 8px 16px rgba(0, 0, 0, 0.4),
+    inset 0 1px 2px rgba(255, 255, 255, 0.1),
+    inset 0 -1px 1px rgba(0, 0, 0, 0.3);
+  transition: all 0.08s ease;
 }
 
 .piano-key-black:hover {
-  background: linear-gradient(180deg, #4a5568 0%, #2d3748 100%);
+  background: linear-gradient(180deg, #495057 0%, #343a40 50%, #212529 100%);
   transform: translateY(-1px);
   box-shadow: 
-    0 8px 16px rgba(0, 0, 0, 0.4),
-    inset 0 1px 2px rgba(255, 255, 255, 0.15);
+    0 10px 20px rgba(0, 0, 0, 0.5),
+    inset 0 1px 2px rgba(255, 255, 255, 0.15),
+    inset 0 -1px 1px rgba(0, 0, 0, 0.4);
 }
 
-.piano-key-black.pressed {
-  background: linear-gradient(180deg, #1a202c 0%, #171923 100%);
-  transform: translateY(2px) scale(0.95);
+/* Pressed states */
+.piano-key-white.pressed,
+.piano-key-white:active {
+  background: linear-gradient(180deg, #e9ecef 0%, #dee2e6 50%, #ced4da 100%);
+  transform: translateY(2px) scale(0.99);
   box-shadow: 
-    0 2px 6px rgba(0, 0, 0, 0.4),
-    inset 0 2px 4px rgba(0, 0, 0, 0.2);
+    0 2px 6px rgba(0, 0, 0, 0.2),
+    inset 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.note-indicator {
-  @apply absolute -top-8 left-1/2 transform -translate-x-1/2;
-  @apply bg-blue-500 text-white text-xs px-2 py-1 rounded-full;
-  @apply pointer-events-none select-none;
-  animation: note-indicator 1s ease-out forwards;
-  z-index: 1000;
+.piano-key-black.pressed,
+.piano-key-black:active {
+  background: linear-gradient(180deg, #212529 0%, #000000 50%, #000000 100%);
+  transform: translateY(2px) scale(0.96);
+  box-shadow: 
+    0 2px 8px rgba(0, 0, 0, 0.6),
+    inset 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
-.key-label {
-  @apply absolute bottom-2 left-1/2 transform -translate-x-1/2;
-  @apply text-xs font-medium pointer-events-none select-none;
-  @apply bg-white bg-opacity-80 px-1 rounded;
-}
-
-.piano-key-black .key-label {
-  @apply bg-black bg-opacity-80 text-white;
-}
-
-/* Performance optimizations */
-.piano-keyboard {
+/* Piano container styling */
+.piano-container {
   will-change: transform;
   contain: layout style paint;
 }
@@ -120,6 +109,26 @@ body {
 .piano-key-black {
   will-change: transform;
   contain: layout style;
+}
+
+/* Note indicator animation */
+@keyframes note-rise {
+  0% { 
+    opacity: 0; 
+    transform: translateY(10px) translateX(-50%) scale(0.8); 
+  }
+  50% { 
+    opacity: 1; 
+    transform: translateY(-5px) translateX(-50%) scale(1.1); 
+  }
+  100% { 
+    opacity: 0; 
+    transform: translateY(-15px) translateX(-50%) scale(1); 
+  }
+}
+
+.note-indicator {
+  animation: note-rise 0.8s ease-out forwards;
 }
 
 /* Accessibility improvements */
@@ -142,35 +151,33 @@ body {
   }
 }
 
-/* Print styles */
-@media print {
-  body {
-    background: white !important;
-    color: black !important;
-  }
+/* Focus management for accessibility */
+.piano-key-white:focus,
+.piano-key-black:focus {
+  outline: 3px solid #2563eb;
+  outline-offset: 2px;
 }
 
-/* PWA install button */
-#install-button {
-  position: fixed;
-  top: 20px;
-  right: 20px;
-  z-index: 1000;
-  padding: 12px 24px;
-  background: #3b82f6;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-weight: 600;
-  cursor: pointer;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
-  transition: all 0.2s ease;
+[data-focus-visible-added] {
+  outline: none;
 }
 
-#install-button:hover {
-  background: #2563eb;
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }
 
 /* Loading states */
@@ -185,31 +192,17 @@ body {
   background-color: rgba(239, 68, 68, 0.1) !important;
 }
 
-/* Focus management for accessibility */
-.piano-key-white:focus,
-.piano-key-black:focus {
-  outline: 3px solid #3b82f6;
-  outline-offset: 2px;
+/* Backdrop blur support */
+@supports (backdrop-filter: blur(10px)) {
+  .backdrop-blur-sm {
+    backdrop-filter: blur(4px);
+  }
 }
 
-[data-focus-visible-added] {
-  outline: none;
-}
-
-/* Custom scrollbar */
-::-webkit-scrollbar {
-  width: 8px;
-}
-
-::-webkit-scrollbar-track {
-  background: hsl(var(--background));
-}
-
-::-webkit-scrollbar-thumb {
-  background: hsl(var(--muted));
-  border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--muted-foreground));
+/* Print styles */
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+  }
 }
