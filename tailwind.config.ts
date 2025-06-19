@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -52,15 +53,14 @@ export default {
 					DEFAULT: 'hsl(var(--card))',
 					foreground: 'hsl(var(--card-foreground))'
 				},
-				sidebar: {
-					DEFAULT: 'hsl(var(--sidebar-background))',
-					foreground: 'hsl(var(--sidebar-foreground))',
-					primary: 'hsl(var(--sidebar-primary))',
-					'primary-foreground': 'hsl(var(--sidebar-primary-foreground))',
-					accent: 'hsl(var(--sidebar-accent))',
-					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
-					border: 'hsl(var(--sidebar-border))',
-					ring: 'hsl(var(--sidebar-ring))'
+				// Piano-specific colors
+				piano: {
+					white: '#ffffff',
+					'white-pressed': '#f0f0f0',
+					black: '#1a1a1a',
+					'black-pressed': '#333333',
+					shadow: 'rgba(0, 0, 0, 0.3)',
+					highlight: '#3b82f6'
 				}
 			},
 			borderRadius: {
@@ -69,26 +69,24 @@ export default {
 				sm: 'calc(var(--radius) - 4px)'
 			},
 			keyframes: {
-				'accordion-down': {
-					from: {
-						height: '0'
-					},
-					to: {
-						height: 'var(--radix-accordion-content-height)'
-					}
+				'key-press': {
+					'0%': { transform: 'translateY(0px)', boxShadow: '0 4px 8px rgba(0,0,0,0.3)' },
+					'100%': { transform: 'translateY(2px)', boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }
 				},
-				'accordion-up': {
-					from: {
-						height: 'var(--radix-accordion-content-height)'
-					},
-					to: {
-						height: '0'
-					}
+				'note-indicator': {
+					'0%': { opacity: '0', transform: 'translateY(10px) scale(0.8)' },
+					'50%': { opacity: '1', transform: 'translateY(-5px) scale(1.1)' },
+					'100%': { opacity: '0', transform: 'translateY(-20px) scale(1)' }
+				},
+				'pulse-glow': {
+					'0%, 100%': { boxShadow: '0 0 5px rgba(59, 130, 246, 0.5)' },
+					'50%': { boxShadow: '0 0 20px rgba(59, 130, 246, 0.8)' }
 				}
 			},
 			animation: {
-				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'key-press': 'key-press 0.1s ease-out',
+				'note-indicator': 'note-indicator 1s ease-out',
+				'pulse-glow': 'pulse-glow 2s ease-in-out infinite'
 			}
 		}
 	},

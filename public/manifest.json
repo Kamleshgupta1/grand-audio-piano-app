@@ -1,0 +1,35 @@
+
+{
+  "name": "Virtual Piano - Professional Online Piano Instrument",
+  "short_name": "Virtual Piano",
+  "description": "Play a realistic virtual piano online with authentic sound samples",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#1a1a1a",
+  "orientation": "landscape-primary",
+  "icons": [
+    {
+      "src": "/piano-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/piano-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["music", "entertainment"],
+  "shortcuts": [
+    {
+      "name": "Play Piano",
+      "short_name": "Play",
+      "description": "Start playing the virtual piano",
+      "url": "/",
+      "icons": [{ "src": "/piano-icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}
