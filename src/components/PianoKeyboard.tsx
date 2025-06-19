@@ -18,11 +18,11 @@ export const PianoKeyboard: React.FC<PianoKeyboardProps> = ({
   const [pressedKeys, setPressedKeys] = useState<Set<string>>(new Set());
   const [pressedNotes, setPressedNotes] = useState<Set<string>>(new Set());
 
-  const handleNotePress = useCallback((note: string) => {
+  const handleNotePress = useCallback((note: string, velocity: number = 0.8) => {
     if (pressedNotes.has(note)) return;
     
     setPressedNotes(prev => new Set(prev).add(note));
-    audioManager.playNote(note, 0.8);
+    audioManager.playNote(note, velocity);
   }, [audioManager, pressedNotes]);
 
   const handleNoteRelease = useCallback((note: string) => {
@@ -52,7 +52,9 @@ export const PianoKeyboard: React.FC<PianoKeyboardProps> = ({
     if (note) {
       event.preventDefault();
       setPressedKeys(prev => new Set(prev).add(key));
-      handleNotePress(note);
+      // Add velocity based on timing (simulate piano touch sensitivity)
+      const velocity = 0.7 + Math.random() * 0.3;
+      handleNotePress(note, velocity);
     }
   }, [pressedKeys, handleNotePress]);
 
@@ -97,49 +99,67 @@ export const PianoKeyboard: React.FC<PianoKeyboardProps> = ({
   const blackKeys = PIANO_LAYOUT.filter(key => key.isBlack);
 
   return (
-    <div className="piano-container">
-      {/* Audio visualizer */}
-      <div className={`visualizer ${pressedNotes.size > 0 ? 'active' : ''}`} />
+    <div className="piano-container w-full max-w-6xl mx-auto">
+      {/* Visual feedback bar */}
+      <div className="mb-4 h-2 bg-gradient-to-r from-blue-500/20 via-purple-500/20 to-pink-500/20 rounded-full overflow-hidden">
+        <div 
+          className={`h-full bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 transition-all duration-300 ${
+            pressedNotes.size > 0 ? 'animate-pulse' : 'w-0'
+          }`}
+          style={{ width: pressedNotes.size > 0 ? '100%' : '0%' }}
+        />
+      </div>
       
-      <div className="relative flex items-end justify-center perspective-1000">
+      <div className="relative flex items-end justify-center bg-gradient-to-b from-gray-100 to-gray-200 p-6 rounded-lg shadow-2xl">
+        {/* Piano body shadow */}
+        <div className="absolute inset-x-0 bottom-0 h-8 bg-gradient-to-t from-black/20 to-transparent rounded-b-lg" />
+        
         {/* White keys */}
-        <div className="flex">
+        <div className="flex relative z-10">
           {whiteKeys.map((mapping) => (
             <PianoKey
               key={mapping.note}
               mapping={mapping}
               isPressed={pressedNotes.has(mapping.note)}
               showLabels={showLabels}
-              onPress={handleNotePress}
+              onPress={(note) => handleNotePress(note, 0.8)}
               onRelease={handleNoteRelease}
             />
           ))}
         </div>
         
         {/* Black keys */}
-        <div className="absolute top-0">
+        <div className="absolute top-6 z-20">
           {blackKeys.map((mapping) => (
             <PianoKey
               key={mapping.note}
               mapping={mapping}
               isPressed={pressedNotes.has(mapping.note)}
               showLabels={showLabels}
-              onPress={handleNotePress}
+              onPress={(note) => handleNotePress(note, 0.9)}
               onRelease={handleNoteRelease}
             />
           ))}
         </div>
       </div>
       
-      {/* Currently playing notes indicator */}
+      {/* Currently playing notes display */}
       {pressedNotes.size > 0 && (
-        <div className="absolute top-4 left-4 bg-black/50 text-white px-3 py-2 rounded-lg backdrop-blur-sm">
-          <div className="text-xs font-medium mb-1">Playing:</div>
-          <div className="text-sm font-bold">
-            {Array.from(pressedNotes).join(', ')}
+        <div className="mt-4 text-center">
+          <div className="inline-flex items-center gap-2 bg-black/80 text-white px-4 py-2 rounded-full backdrop-blur-sm">
+            <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+            <span className="text-sm font-medium">
+              Playing: {Array.from(pressedNotes).join(' • ')}
+            </span>
           </div>
         </div>
       )}
+
+      {/* Keyboard mapping hint */}
+      <div className="mt-6 text-center text-sm text-gray-600">
+        <p>Use your keyboard: <span className="font-mono bg-gray-100 px-1 rounded">Z-M</span> for lower octave, <span className="font-mono bg-gray-100 px-1 rounded">Q-U</span> for middle octave, <span className="font-mono bg-gray-100 px-1 rounded">I-]</span> for upper octave</p>
+        <p className="mt-1">Hold <span className="font-mono bg-gray-100 px-1 rounded">Space</span> for sustain pedal</p>
+      </div>
     </div>
   );
 };

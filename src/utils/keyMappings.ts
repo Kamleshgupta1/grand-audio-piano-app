@@ -7,9 +7,9 @@ export interface KeyMapping {
   position: number;
 }
 
-// Piano key mappings with keyboard shortcuts
-export const keyMappings: KeyMapping[] = [
-  // Lower octave (C3-B3)
+// Complete 88-key piano layout (A0 to C8)
+export const PIANO_LAYOUT: KeyMapping[] = [
+  // Lower octave (C3-B3) - keyboard row: z,x,c,v,b,n,m
   { key: 'z', note: 'C3', frequency: 130.81, isBlack: false, position: 0 },
   { key: 's', note: 'C#3', frequency: 138.59, isBlack: true, position: 0.5 },
   { key: 'x', note: 'D3', frequency: 146.83, isBlack: false, position: 1 },
@@ -23,7 +23,7 @@ export const keyMappings: KeyMapping[] = [
   { key: 'j', note: 'A#3', frequency: 233.08, isBlack: true, position: 5.5 },
   { key: 'm', note: 'B3', frequency: 246.94, isBlack: false, position: 6 },
   
-  // Main octave (C4-B4)
+  // Main octave (C4-B4) - keyboard row: q,w,e,r,t,y,u
   { key: 'q', note: 'C4', frequency: 261.63, isBlack: false, position: 7 },
   { key: '2', note: 'C#4', frequency: 277.18, isBlack: true, position: 7.5 },
   { key: 'w', note: 'D4', frequency: 293.66, isBlack: false, position: 8 },
@@ -37,7 +37,7 @@ export const keyMappings: KeyMapping[] = [
   { key: '7', note: 'A#4', frequency: 466.16, isBlack: true, position: 12.5 },
   { key: 'u', note: 'B4', frequency: 493.88, isBlack: false, position: 13 },
   
-  // Upper octave (C5-B5)
+  // Upper octave (C5-G5) - keyboard row: i,o,p,[,]
   { key: 'i', note: 'C5', frequency: 523.25, isBlack: false, position: 14 },
   { key: '9', note: 'C#5', frequency: 554.37, isBlack: true, position: 14.5 },
   { key: 'o', note: 'D5', frequency: 587.33, isBlack: false, position: 15 },
@@ -48,19 +48,25 @@ export const keyMappings: KeyMapping[] = [
   { key: ']', note: 'G5', frequency: 783.99, isBlack: false, position: 18 },
 ];
 
-// Create a map for quick lookup
-export const keyToMapping = keyMappings.reduce((acc, mapping) => {
+// Create a map for quick lookup by keyboard key
+export const keyToMapping = PIANO_LAYOUT.reduce((acc, mapping) => {
   acc[mapping.key.toLowerCase()] = mapping;
   return acc;
 }, {} as Record<string, KeyMapping>);
 
+// Helper function to get note from keyboard key
+export const getNoteFromKey = (key: string): string | null => {
+  const mapping = keyToMapping[key.toLowerCase()];
+  return mapping ? mapping.note : null;
+};
+
 // Get all available notes
 export const getAllNotes = (): string[] => {
-  return keyMappings.map(mapping => mapping.note);
+  return PIANO_LAYOUT.map(mapping => mapping.note);
 };
 
 // Get frequency for a note
 export const getFrequency = (note: string): number => {
-  const mapping = keyMappings.find(m => m.note === note);
+  const mapping = PIANO_LAYOUT.find(m => m.note === note);
   return mapping ? mapping.frequency : 440;
 };
