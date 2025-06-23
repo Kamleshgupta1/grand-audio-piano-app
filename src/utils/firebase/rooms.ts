@@ -1,4 +1,3 @@
-
 import { collection, addDoc, query, where, doc, setDoc, getDoc, onSnapshot, serverTimestamp, updateDoc, arrayUnion, arrayRemove, deleteDoc, getDocs } from "firebase/firestore";
 import { toast } from '@/hooks/use-toast';
 import { db } from './config';
@@ -80,14 +79,17 @@ export const listenToRoomData = (
           pendingRequests: doc.data().pendingRequests || [],
           participantIds: doc.data().participantIds || []
         };
+        console.log('listenToRoomData: Room found and data loaded successfully');
         onSuccess(roomData);
       } else {
-        // Room doesn't exist
-        if (onError) onError(new Error("Room not found"));
+        console.log('listenToRoomData: Room document does not exist');
+        // Room doesn't exist - provide more context in error
+        const error = new Error(`Room not found: ${roomId}`);
+        if (onError) onError(error);
       }
     },
     (error) => {
-      console.error("Error listening to room:", error);
+      console.error("listenToRoomData: Firestore listener error:", error);
       if (onError) onError(error);
     }
   );

@@ -33,6 +33,7 @@ export const useRoomData = () => {
 
   const [lastActivityTime, setLastActivityTime] = useState<number>(Date.now());
   const [lastInstrumentPlayTime, setLastInstrumentPlayTime] = useState<number>(Date.now());
+  const [roomDataListener, setRoomDataListener] = useState<(() => void) | null>(null);
 
   const { scheduleRoomDestruction, clearDestruction } = useRoomCleanup(roomId);
   const { updateFirestorePresence } = useRoomPresence(roomId, isParticipant);
@@ -53,6 +54,11 @@ export const useRoomData = () => {
     console.log(`useRoomData: Setting up room data listener for room ${roomId}`);
     setIsLoading(true);
     clearDestruction();
+
+    // Clean up previous listener if it exists
+    if (roomDataListener) {
+      roomDataListener();
+    }
 
     const unsubscribeRoom = listenToRoomData(
       roomId,
@@ -105,15 +111,35 @@ export const useRoomData = () => {
       (error) => {
         console.error("useRoomData: Room data listener error:", error);
         handleFirebaseError(error, 'listen to room data', user?.uid, roomId);
-        setError("Failed to load room data");
+        
+        // Provide more specific error messages
+        if (error.message?.includes('Room not found')) {
+          setError("Room not found or may still be loading");
+          // Don't immediately redirect, give room creation more time
+          setTimeout(() => {
+            if (isLoading) {
+              setError("Room could not be loaded");
+              navigate('/music-rooms');
+            }
+          }, 3000);
+        } else {
+          setError("Failed to load room data");
+          setTimeout(() => {
+            navigate('/music-rooms');
+          }, 2000);
+        }
         setIsLoading(false);
       }
     );
 
+    setRoomDataListener(() => unsubscribeRoom);
+
     return () => {
       console.log('useRoomData: Cleaning up room data listener');
       clearDestruction();
-      unsubscribeRoom();
+      if (unsubscribeRoom) {
+        unsubscribeRoom();
+      }
     };
   }, [roomId, user?.uid, navigate, addNotification, handleFirebaseError, handleAsyncError, normalizeRoomData, updateUserStatus, scheduleRoomDestruction, clearDestruction]);
 

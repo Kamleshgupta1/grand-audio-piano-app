@@ -19,15 +19,14 @@ export const useRoomJoin = (roomId: string | undefined) => {
   console.log(`useRoomJoin: Hook initialized for room ${roomId}, user: ${user?.uid}`);
 
   const attemptJoin = async (joinCode?: string) => {
-    if (!roomId || !user || isJoining || hasAttemptedJoin) {
-      console.log(`useRoomJoin: Cannot join - roomId: ${roomId}, user: ${!!user}, isJoining: ${isJoining}, hasAttempted: ${hasAttemptedJoin}`);
+    if (!roomId || !user || isJoining) {
+      console.log(`useRoomJoin: Cannot join - roomId: ${roomId}, user: ${!!user}, isJoining: ${isJoining}`);
       return false;
     }
 
     console.log(`useRoomJoin: Starting join attempt for room ${roomId} with user ${user.uid}`);
     setIsJoining(true);
     setJoinError(null);
-    setHasAttemptedJoin(true);
 
     try {
       // First check if user is already a participant
@@ -107,29 +106,38 @@ export const useRoomJoin = (roomId: string | undefined) => {
     console.log(`useRoomJoin: Setting up auto-join for room ${roomId}`);
 
     const handleAutoJoin = async () => {
-      // Listen to room data to check if it exists
-      const unsubscribe = listenToRoomData(
-        roomId,
-        async (roomData) => {
-          console.log('useRoomJoin: Room data received, room exists');
-          setRoomExists(true);
-          
-          // Small delay to ensure room is fully created
-          setTimeout(async () => {
-            console.log('useRoomJoin: Attempting auto-join after delay');
-            await attemptJoin();
-          }, 1000);
-          
-          unsubscribe(); // Stop listening once we've handled the join
-        },
-        (error) => {
-          console.error('useRoomJoin: Error getting room data:', error);
-          setRoomExists(false);
-          setJoinError("Room not found");
-          setIsJoining(false);
-          navigate('/music-rooms');
-        }
-      );
+      setHasAttemptedJoin(true);
+      
+      // Add a delay to ensure room creation is complete
+      console.log('useRoomJoin: Waiting for room creation to complete...');
+      setTimeout(async () => {
+        // Listen to room data to check if it exists
+        const unsubscribe = listenToRoomData(
+          roomId,
+          async (roomData) => {
+            console.log('useRoomJoin: Room data received, room exists');
+            setRoomExists(true);
+            unsubscribe(); // Stop listening once we've confirmed room exists
+            
+            // Small delay to ensure room is fully created
+            setTimeout(async () => {
+              console.log('useRoomJoin: Attempting auto-join after room confirmation');
+              await attemptJoin();
+            }, 500);
+          },
+          (error) => {
+            console.error('useRoomJoin: Error getting room data:', error);
+            setRoomExists(false);
+            setJoinError("Room not found");
+            setIsJoining(false);
+            
+            // Add a small delay before redirecting to prevent immediate redirect
+            setTimeout(() => {
+              navigate('/music-rooms');
+            }, 1000);
+          }
+        );
+      }, 1500); // Wait 1.5 seconds for room creation to complete
     };
 
     handleAutoJoin();
