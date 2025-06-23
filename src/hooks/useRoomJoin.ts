@@ -3,7 +3,6 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useNotifications } from '@/hooks/useNotifications';
-import { addUserToRoom, isUserRoomParticipant } from '@/utils/firebase/room-participant-management';
 import { joinRoomWithCode, requestToJoinRoom } from '@/utils/firebase/room-joining';
 import { listenToRoomData } from '@/utils/firebase/rooms';
 
@@ -19,54 +18,33 @@ export const useRoomJoin = (roomId: string | undefined) => {
   console.log(`useRoomJoin: Hook initialized for room ${roomId}, user: ${user?.uid}`);
 
   const attemptJoin = async (joinCode?: string) => {
-    if (!roomId || !user || isJoining || hasAttemptedJoin) {
-      console.log(`useRoomJoin: Cannot join - roomId: ${roomId}, user: ${!!user}, isJoining: ${isJoining}, hasAttempted: ${hasAttemptedJoin}`);
+    if (!roomId || !user || isJoining) {
+      console.log(`useRoomJoin: Cannot join - roomId: ${roomId}, user: ${!!user}, isJoining: ${isJoining}`);
       return false;
     }
 
     console.log(`useRoomJoin: Starting join attempt for room ${roomId} with user ${user.uid}`);
     setIsJoining(true);
     setJoinError(null);
-    setHasAttemptedJoin(true);
 
     try {
-      // First check if user is already a participant
-      console.log(`useRoomJoin: Checking if user ${user.uid} is already participant in room ${roomId}`);
-      const isParticipant = await isUserRoomParticipant(roomId, user.uid);
+      const joinSuccess = await joinRoomWithCode(roomId, user, joinCode);
       
-      if (isParticipant) {
-        console.log('useRoomJoin: User is already a participant, join successful');
+      if (joinSuccess) {
+        console.log(`useRoomJoin: Successfully joined room ${roomId}`);
         setIsJoining(false);
+        setHasAttemptedJoin(true);
         return true;
-      }
-
-      console.log(`useRoomJoin: User not a participant, attempting to add to room`);
-      let joinSuccess = false;
-
-      if (joinCode) {
-        console.log(`useRoomJoin: Attempting join with code: ${joinCode}`);
-        const userWithCode = { ...user, joinCode };
-        joinSuccess = await addUserToRoom(roomId, userWithCode);
       } else {
-        console.log(`useRoomJoin: Attempting regular join`);
-        joinSuccess = await addUserToRoom(roomId, user);
-      }
-
-      if (!joinSuccess) {
-        console.error('useRoomJoin: Failed to join room - addUserToRoom returned false');
+        console.error('useRoomJoin: Failed to join room');
         setJoinError("Failed to join room");
-        navigate('/music-rooms');
+        setIsJoining(false);
         return false;
       }
-
-      console.log(`useRoomJoin: Successfully joined room ${roomId}`);
-      setIsJoining(false);
-      return true;
     } catch (error) {
       console.error('useRoomJoin: Error joining room:', error);
       setJoinError("Failed to access room");
       setIsJoining(false);
-      navigate('/music-rooms');
       return false;
     }
   };
@@ -99,8 +77,8 @@ export const useRoomJoin = (roomId: string | undefined) => {
 
   // Auto-attempt join when room ID and user are available
   useEffect(() => {
-    if (!roomId || !user || isJoining || hasAttemptedJoin) {
-      console.log(`useRoomJoin: Skipping auto-join - roomId: ${roomId}, user: ${!!user}, isJoining: ${isJoining}, hasAttempted: ${hasAttemptedJoin}`);
+    if (!roomId || !user || hasAttemptedJoin) {
+      console.log(`useRoomJoin: Skipping auto-join - roomId: ${roomId}, user: ${!!user}, hasAttempted: ${hasAttemptedJoin}`);
       return;
     }
 
@@ -114,13 +92,24 @@ export const useRoomJoin = (roomId: string | undefined) => {
           console.log('useRoomJoin: Room data received, room exists');
           setRoomExists(true);
           
-          // Small delay to ensure room is fully created
-          setTimeout(async () => {
-            console.log('useRoomJoin: Attempting auto-join after delay');
-            await attemptJoin();
-          }, 1000);
+          // Check if user is already a participant
+          const isAlreadyParticipant = roomData.participantIds?.includes(user.uid);
           
-          unsubscribe(); // Stop listening once we've handled the join
+          if (isAlreadyParticipant) {
+            console.log('useRoomJoin: User is already a participant');
+            setIsJoining(false);
+            setHasAttemptedJoin(true);
+            unsubscribe();
+            return;
+          }
+          
+          // Attempt to join if not already a participant
+          console.log('useRoomJoin: Attempting auto-join');
+          const joinResult = await attemptJoin();
+          
+          if (joinResult) {
+            unsubscribe();
+          }
         },
         (error) => {
           console.error('useRoomJoin: Error getting room data:', error);
@@ -133,7 +122,7 @@ export const useRoomJoin = (roomId: string | undefined) => {
     };
 
     handleAutoJoin();
-  }, [roomId, user?.uid]); // Only depend on roomId and user.uid to avoid unnecessary re-runs
+  }, [roomId, user?.uid, hasAttemptedJoin]);
 
   return {
     isJoining,
