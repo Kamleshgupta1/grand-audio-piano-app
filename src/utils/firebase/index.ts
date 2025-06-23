@@ -5,7 +5,14 @@ export * from './config';
 export * from './room-chat';
 export * from './rooms';
 
-// Export participant management functions
+// Export safe participant management functions
+export {
+  removeUserFromRoomSafe,
+  updateUserInstrumentSafe,
+  toggleUserMuteSafe
+} from './room-operations';
+
+// Export legacy participant management functions (deprecated - use safe versions)
 export {
   isUserRoomParticipant,
   addUserToRoom,

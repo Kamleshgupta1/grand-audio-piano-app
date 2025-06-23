@@ -1,25 +1,21 @@
+
 import React, { createContext, useContext, ReactNode } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useNotifications } from '@/hooks/useNotifications';
-import { useRoomData } from '@/hooks/useRoomData';
-import { useRealTimeChat } from '@/hooks/useRealTimeChat';
+import { useRoomData } from '@/hooks/room/useRoomData';
+import { useRoomChat } from '@/hooks/room/useRoomChat';
 import { useRoomInstruments } from '@/hooks/useRoomInstruments';
 import { useParticipantManagement } from '@/hooks/useParticipantManagement';
 import { useRoomJoin } from '@/hooks/useRoomJoin';
+import { useRoomActions } from '@/hooks/useRoomActions';
 import {
   sendPrivateMessage,
   getPrivateMessages,
   markMessageAsRead,
-  listenForUnreadMessages,
-  toggleRoomChat,
-  toggleAutoCloseRoom,
-  updateRoomSettings,
-  handleJoinRequest,
-  deleteRoomFromFirestore
+  listenForUnreadMessages
 } from '@/utils/firebase';
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 
 interface InstrumentNote {
   note: string;
@@ -65,7 +61,6 @@ export const RoomProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   const { roomId } = useParams<{ roomId: string }>();
   const { user } = useAuth();
   const { addNotification } = useNotifications();
-  const navigate = useNavigate();
 
   const {
     room,
@@ -85,7 +80,7 @@ export const RoomProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     unreadMessageCount,
     sendMessage,
     markChatAsRead
-  } = useRealTimeChat(roomId, isParticipant, isHost, room);
+  } = useRoomChat(roomId, isParticipant, isHost, room);
 
   const {
     remotePlaying,
@@ -99,115 +94,19 @@ export const RoomProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     switchInstrument
   } = useParticipantManagement(roomId, room, isHost);
 
+  const {
+    closeRoom,
+    toggleChat,
+    toggleAutoClose,
+    updateSettings,
+    respondToJoinRequest
+  } = useRoomActions(roomId, user, isHost);
+
   const { requestJoin } = useRoomJoin(roomId);
 
   const [privateMessages, setPrivateMessages] = useState<any[]>([]);
   const [privateMessagingUser, setPrivateMessagingUser] = useState<string | null>(null);
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
-
-  // Close room function for hosts
-  const closeRoom = async (): Promise<void> => {
-    if (!roomId || !user || !isHost) return;
-
-    try {
-      console.log('RoomContext: Host closing room');
-      await deleteRoomFromFirestore(roomId);
-      navigate('/music-rooms');
-      addNotification({
-        title: "Room Closed",
-        message: "Room has been closed",
-        type: "info"
-      });
-    } catch (error) {
-      console.error("RoomContext: Error closing room:", error);
-      addNotification({
-        title: "Error",
-        message: "Failed to close room",
-        type: "error"
-      });
-    }
-  };
-
-  // Room settings management
-  const toggleChat = async (disabled: boolean): Promise<void> => {
-    if (!roomId || !user || !isHost) return;
-
-    try {
-      await toggleRoomChat(roomId, disabled);
-      addNotification({
-        title: disabled ? "Chat Disabled" : "Chat Enabled",
-        message: disabled ? "Chat has been disabled for all users" : "Chat has been enabled for all users",
-        type: "info"
-      });
-    } catch (error) {
-      console.error("Error toggling chat:", error);
-      addNotification({
-        title: "Error",
-        message: "Failed to update chat settings",
-        type: "error"
-      });
-    }
-  };
-
-  const toggleAutoClose = async (enabled: boolean, timeout: number = 5): Promise<void> => {
-    if (!roomId || !user || !isHost) return;
-
-    try {
-      await toggleAutoCloseRoom(roomId, enabled, timeout);
-      addNotification({
-        title: enabled ? "Auto-Close Enabled" : "Auto-Close Disabled",
-        message: enabled ? `Room will auto-close after ${timeout} minutes of inactivity` : "Auto-close has been disabled for this room",
-        type: "info"
-      });
-    } catch (error) {
-      console.error("Error toggling auto-close:", error);
-      addNotification({
-        title: "Error",
-        message: "Failed to update auto-close settings",
-        type: "error"
-      });
-    }
-  };
-
-  const updateSettings = async (settings: any): Promise<void> => {
-    if (!roomId || !user || !isHost) return;
-
-    try {
-      await updateRoomSettings(roomId, settings);
-      addNotification({
-        title: "Room Settings Updated",
-        message: "Room settings have been updated successfully",
-        type: "success"
-      });
-    } catch (error) {
-      console.error("Error updating settings:", error);
-      addNotification({
-        title: "Error",
-        message: "Failed to update room settings",
-        type: "error"
-      });
-    }
-  };
-
-  const respondToJoinRequest = async (userId: string, approve: boolean): Promise<void> => {
-    if (!roomId || !user || !isHost) return;
-
-    try {
-      await handleJoinRequest(roomId, userId, approve);
-      addNotification({
-        title: approve ? "User Approved" : "Request Denied",
-        message: approve ? "User has been approved to join" : "User's request has been denied",
-        type: approve ? "success" : "info"
-      });
-    } catch (error) {
-      console.error("Error handling join request:", error);
-      addNotification({
-        title: "Error",
-        message: "Failed to process join request",
-        type: "error"
-      });
-    }
-  };
 
   // Private messaging setup
   useEffect(() => {
