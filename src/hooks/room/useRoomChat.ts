@@ -54,8 +54,8 @@ export const useRoomChat = (roomId: string | undefined, isParticipant: boolean, 
           return timeA.getTime() - timeB.getTime();
         });
 
-        // Force re-render by creating new array reference
-        setMessages([...sortedMessages]);
+        // Force re-render by creating new array reference with unique key
+        setMessages(sortedMessages.map((msg, index) => ({ ...msg, _key: `${msg.id}-${index}` })));
         setIsLoading(false);
 
         // Calculate unread count
@@ -67,18 +67,19 @@ export const useRoomChat = (roomId: string | undefined, isParticipant: boolean, 
         
         setUnreadMessageCount(unreadCount);
 
-        // Show notification for new messages
-        const latestMessage = sortedMessages[sortedMessages.length - 1];
-        if (latestMessage && 
-            latestMessage.senderId !== user.uid && 
-            sortedMessages.length > 0) {
-          const latestMsgTime = latestMessage.timestamp?.toDate?.() || new Date(latestMessage.timestamp || 0);
-          if (latestMsgTime.getTime() > lastSeenRef.current) {
-            addNotification({
-              title: "New Message",
-              message: `${latestMessage.senderName}: ${latestMessage.text.substring(0, 50)}`,
-              type: "info"
-            });
+        // Show notification for new messages (but not on initial load)
+        if (sortedMessages.length > 0 && !isLoading) {
+          const latestMessage = sortedMessages[sortedMessages.length - 1];
+          if (latestMessage && 
+              latestMessage.senderId !== user.uid) {
+            const latestMsgTime = latestMessage.timestamp?.toDate?.() || new Date(latestMessage.timestamp || 0);
+            if (latestMsgTime.getTime() > lastSeenRef.current) {
+              addNotification({
+                title: "New Message",
+                message: `${latestMessage.senderName}: ${latestMessage.text.substring(0, 50)}`,
+                type: "info"
+              });
+            }
           }
         }
       },
@@ -98,7 +99,7 @@ export const useRoomChat = (roomId: string | undefined, isParticipant: boolean, 
       console.log('useRoomChat: Cleaning up chat listener');
       unsubscribe();
     };
-  }, [roomId, user?.uid, addNotification]);
+  }, [roomId, user?.uid, addNotification, isLoading]);
 
   const sendMessage = useCallback(async (message: string) => {
     if (!roomId || !user || !message.trim()) {

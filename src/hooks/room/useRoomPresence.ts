@@ -9,23 +9,24 @@ export const useRoomPresence = (roomId: string | undefined, isParticipant: boole
   const { user } = useAuth();
 
   const updateFirestorePresence = useCallback(async (isOnline: boolean) => {
-    if (!roomId || !user) return;
+    if (!roomId || !user || !isParticipant) return;
 
     try {
       const roomRef = doc(db, 'musicRooms', roomId);
       const now = new Date().toISOString();
       
+      // Only update presence, don't change participant status
       await updateDoc(roomRef, {
-        [`participants.${user.uid}.isInRoom`]: isOnline,
-        [`participants.${user.uid}.status`]: isOnline ? 'active' : 'disconnected',
         [`participants.${user.uid}.lastSeen`]: now,
         [`participants.${user.uid}.heartbeatTimestamp`]: Date.now(),
-        ...(isOnline ? {} : { [`participants.${user.uid}.leftAt`]: now })
+        ...(isOnline ? {
+          [`participants.${user.uid}.status`]: 'active'
+        } : {})
       });
     } catch (error) {
       console.error('Error updating Firestore presence:', error);
     }
-  }, [roomId, user]);
+  }, [roomId, user, isParticipant]);
 
   useEffect(() => {
     if (!roomId || !user || !isParticipant) return;
@@ -39,7 +40,7 @@ export const useRoomPresence = (roomId: string | undefined, isParticipant: boole
     const cleanup = onValue(connectedRef, (snapshot) => {
       if (snapshot.val() === false) return;
 
-      // Set up disconnect handler
+      // Set up disconnect handler - but don't remove user from participants
       onDisconnect(userStatusRef)
         .set({ state: 'disconnected', lastChanged: serverTimestamp() })
         .then(() => {
@@ -55,7 +56,7 @@ export const useRoomPresence = (roomId: string | undefined, isParticipant: boole
     return () => {
       console.log('useRoomPresence: Cleaning up presence for user:', user.uid);
       cleanup();
-      updateFirestorePresence(false);
+      // Don't call updateFirestorePresence(false) here as it might trigger auto-removal
     };
   }, [roomId, user, isParticipant, updateFirestorePresence]);
 

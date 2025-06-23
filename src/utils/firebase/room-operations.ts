@@ -1,5 +1,5 @@
 
-import { doc, getDoc, updateDoc, arrayRemove } from "firebase/firestore";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { toast } from '@/hooks/use-toast';
 import { db } from './config';
 import { deleteRoomFromFirestore } from './rooms';
@@ -50,11 +50,23 @@ export const removeUserFromRoomSafe = async (roomId: string, userId: string): Pr
 
     // Handle host transfer if the removed user was the host
     if (userToRemove.isHost && updatedParticipants.length > 0) {
-      const newHost = updatedParticipants[0];
-      newHost.isHost = true;
+      // Find the next suitable host (prefer someone who was there longer)
+      const newHost = updatedParticipants.sort((a: any, b: any) => {
+        const joinTimeA = new Date(a.joinedAt || 0).getTime();
+        const joinTimeB = new Date(b.joinedAt || 0).getTime();
+        return joinTimeA - joinTimeB;
+      })[0];
+      
+      // Update the new host in the participants array
+      const updatedParticipantsWithNewHost = updatedParticipants.map((p: any) => {
+        if (p.id === newHost.id) {
+          return { ...p, isHost: true };
+        }
+        return { ...p, isHost: false };
+      });
       
       updateData.hostId = newHost.id;
-      updateData.participants = updatedParticipants;
+      updateData.participants = updatedParticipantsWithNewHost;
       
       console.log(`removeUserFromRoomSafe: Transferring host to ${newHost.id} (${newHost.name})`);
     }

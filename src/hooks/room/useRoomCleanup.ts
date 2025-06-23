@@ -18,14 +18,20 @@ export const useRoomCleanup = (roomId: string | undefined) => {
       destructionTimeoutRef.current = null;
     }
 
-    const activeParticipants = currentRoom.participants.filter((p: any) => 
-      p.status === 'active' && p.isInRoom !== false
-    );
+    // Check for truly active participants (not just presence)
+    const activeParticipants = currentRoom.participants.filter((p: any) => {
+      // Consider a participant active if they have recent heartbeat (within last 30 seconds)
+      const heartbeatTime = p.heartbeatTimestamp || 0;
+      const now = Date.now();
+      const isRecentlyActive = (now - heartbeatTime) < 30000; // 30 seconds
+      
+      return p.status === 'active' && p.isInRoom !== false && isRecentlyActive;
+    });
 
-    console.log(`useRoomCleanup: Room ${roomId} has ${activeParticipants.length} active participants`);
+    console.log(`useRoomCleanup: Room ${roomId} has ${activeParticipants.length} truly active participants`);
 
     if (activeParticipants.length === 0) {
-      console.log('useRoomCleanup: No active participants, scheduling destruction');
+      console.log('useRoomCleanup: No truly active participants, scheduling destruction');
       
       destructionTimeoutRef.current = setTimeout(async () => {
         try {
@@ -34,13 +40,13 @@ export const useRoomCleanup = (roomId: string | undefined) => {
           navigate('/music-rooms');
           addNotification({
             title: "Room Closed",
-            message: "Room was closed as all participants have left",
+            message: "Room was closed due to inactivity",
             type: "info"
           });
         } catch (error) {
           console.error('useRoomCleanup: Error destroying empty room:', error);
         }
-      }, 10000); // 10 second delay to prevent premature destruction
+      }, 15000); // 15 second delay to prevent premature destruction
     }
   }, [roomId, navigate, addNotification]);
 
