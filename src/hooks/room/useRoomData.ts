@@ -34,6 +34,7 @@ export const useRoomData = () => {
   const [lastActivityTime, setLastActivityTime] = useState<number>(Date.now());
   const [lastInstrumentPlayTime, setLastInstrumentPlayTime] = useState<number>(Date.now());
   const [roomDataListener, setRoomDataListener] = useState<(() => void) | null>(null);
+  const [roomLoadStartTime, setRoomLoadStartTime] = useState<number>(Date.now());
 
   const { scheduleRoomDestruction, clearDestruction } = useRoomCleanup(roomId);
   const { updateFirestorePresence } = useRoomPresence(roomId, isParticipant);
@@ -53,6 +54,7 @@ export const useRoomData = () => {
 
     console.log(`useRoomData: Setting up room data listener for room ${roomId}`);
     setIsLoading(true);
+    setRoomLoadStartTime(Date.now());
     clearDestruction();
 
     // Clean up previous listener if it exists
@@ -96,10 +98,17 @@ export const useRoomData = () => {
           // Update user status
           updateUserStatus(user.uid, normalizedRoom);
 
-          // Schedule room cleanup if needed (with delay to prevent premature destruction)
-          setTimeout(() => {
-            scheduleRoomDestruction(normalizedRoom);
-          }, 5000);
+          // Only schedule room cleanup after room has been loaded for at least 30 seconds
+          // This prevents immediate destruction during room creation/joining
+          const roomAge = Date.now() - roomLoadStartTime;
+          if (roomAge > 30000) {
+            console.log('useRoomData: Room is mature enough for cleanup checks');
+            setTimeout(() => {
+              scheduleRoomDestruction(normalizedRoom);
+            }, 10000); // Additional 10 second delay
+          } else {
+            console.log(`useRoomData: Room is too young for cleanup (${roomAge}ms old), skipping destruction check`);
+          }
 
         } catch (error) {
           console.error('useRoomData: Error processing room data:', error);
@@ -112,21 +121,21 @@ export const useRoomData = () => {
         console.error("useRoomData: Room data listener error:", error);
         handleFirebaseError(error, 'listen to room data', user?.uid, roomId);
         
-        // Provide more specific error messages
+        // Provide more specific error messages and longer wait times
         if (error.message?.includes('Room not found')) {
-          setError("Room not found or may still be loading");
-          // Don't immediately redirect, give room creation more time
+          setError("Loading room... Please wait");
+          // Give room creation more time before giving up
           setTimeout(() => {
             if (isLoading) {
-              setError("Room could not be loaded");
+              setError("Room could not be loaded. Please try again.");
               navigate('/music-rooms');
             }
-          }, 3000);
+          }, 10000); // Increased to 10 seconds
         } else {
           setError("Failed to load room data");
           setTimeout(() => {
             navigate('/music-rooms');
-          }, 2000);
+          }, 5000);
         }
         setIsLoading(false);
       }

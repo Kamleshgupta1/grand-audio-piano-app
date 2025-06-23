@@ -108,7 +108,7 @@ export const useRoomJoin = (roomId: string | undefined) => {
     const handleAutoJoin = async () => {
       setHasAttemptedJoin(true);
       
-      // Add a delay to ensure room creation is complete
+      // Add a longer delay to ensure room creation is complete
       console.log('useRoomJoin: Waiting for room creation to complete...');
       setTimeout(async () => {
         // Listen to room data to check if it exists
@@ -119,11 +119,11 @@ export const useRoomJoin = (roomId: string | undefined) => {
             setRoomExists(true);
             unsubscribe(); // Stop listening once we've confirmed room exists
             
-            // Small delay to ensure room is fully created
+            // Longer delay to ensure room is fully created and all systems are ready
             setTimeout(async () => {
               console.log('useRoomJoin: Attempting auto-join after room confirmation');
               await attemptJoin();
-            }, 500);
+            }, 2000); // Increased to 2 seconds
           },
           (error) => {
             console.error('useRoomJoin: Error getting room data:', error);
@@ -131,13 +131,13 @@ export const useRoomJoin = (roomId: string | undefined) => {
             setJoinError("Room not found");
             setIsJoining(false);
             
-            // Add a small delay before redirecting to prevent immediate redirect
+            // Add a delay before redirecting to prevent immediate redirect
             setTimeout(() => {
               navigate('/music-rooms');
-            }, 1000);
+            }, 2000);
           }
         );
-      }, 1500); // Wait 1.5 seconds for room creation to complete
+      }, 3000); // Increased to 3 seconds for room creation to complete
     };
 
     handleAutoJoin();

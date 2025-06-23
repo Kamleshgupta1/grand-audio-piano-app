@@ -14,15 +14,36 @@ export const useRoomPresence = (roomId: string | undefined, isParticipant: boole
     try {
       const roomRef = doc(db, 'musicRooms', roomId);
       const now = new Date().toISOString();
+      const timestamp = Date.now();
       
-      // Only update presence, don't change participant status
-      await updateDoc(roomRef, {
-        [`participants.${user.uid}.lastSeen`]: now,
-        [`participants.${user.uid}.heartbeatTimestamp`]: Date.now(),
-        ...(isOnline ? {
-          [`participants.${user.uid}.status`]: 'active'
-        } : {})
-      });
+      console.log(`useRoomPresence: Updating presence for user ${user.uid} - online: ${isOnline}`);
+      
+      // Find the user in participants array and update their data
+      const roomSnap = await roomRef.get();
+      if (roomSnap.exists()) {
+        const roomData = roomSnap.data();
+        const participants = roomData.participants || [];
+        
+        const updatedParticipants = participants.map((p: any) => {
+          if (p.id === user.uid) {
+            return {
+              ...p,
+              lastSeen: now,
+              heartbeatTimestamp: timestamp,
+              status: isOnline ? 'active' : p.status,
+              isInRoom: isOnline
+            };
+          }
+          return p;
+        });
+        
+        await updateDoc(roomRef, {
+          participants: updatedParticipants,
+          lastActivity: now
+        });
+        
+        console.log(`useRoomPresence: Updated presence for user ${user.uid} with heartbeat ${timestamp}`);
+      }
     } catch (error) {
       console.error('Error updating Firestore presence:', error);
     }
@@ -37,10 +58,13 @@ export const useRoomPresence = (roomId: string | undefined, isParticipant: boole
     const userStatusRef = ref(rtdb, `status/${roomId}/${user.uid}`);
     const connectedRef = ref(rtdb, '.info/connected');
 
+    // Immediately update presence when component mounts
+    updateFirestorePresence(true);
+
     const cleanup = onValue(connectedRef, (snapshot) => {
       if (snapshot.val() === false) return;
 
-      // Set up disconnect handler - but don't remove user from participants
+      // Set up disconnect handler
       onDisconnect(userStatusRef)
         .set({ state: 'disconnected', lastChanged: serverTimestamp() })
         .then(() => {
@@ -50,13 +74,18 @@ export const useRoomPresence = (roomId: string | undefined, isParticipant: boole
         });
     });
 
-    // Initial presence update
-    updateFirestorePresence(true);
+    // Set up heartbeat interval to maintain presence
+    const heartbeatInterval = setInterval(() => {
+      console.log(`useRoomPresence: Sending heartbeat for user ${user.uid}`);
+      updateFirestorePresence(true);
+    }, 15000); // Every 15 seconds
 
     return () => {
       console.log('useRoomPresence: Cleaning up presence for user:', user.uid);
+      clearInterval(heartbeatInterval);
       cleanup();
-      // Don't call updateFirestorePresence(false) here as it might trigger auto-removal
+      // Update presence to offline when leaving
+      updateFirestorePresence(false);
     };
   }, [roomId, user, isParticipant, updateFirestorePresence]);
 
