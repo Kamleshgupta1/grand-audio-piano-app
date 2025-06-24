@@ -518,11 +518,11 @@ const PianoPage = () => {
             </strong>
           </p>
           <LandscapeInstrumentModal isOpen={open} onClose={() => setOpen(false)}>
-            <div className={`piano-container rounded-lg overflow-hidden shadow-xl p-4 mb-8 ${theme === 'dark' ? 'bg-gray-900' :
-                theme === 'neon' ? 'bg-gray-950 bg-opacity-90' :
-                  theme === 'classic' ? 'bg-gray-900' : 'bg-white'
+            <div className={`piano-container rounded-lg overflow-hidden shadow-xl py-4 mb-8 ${theme === 'dark' ? 'bg-gray-900' :
+              theme === 'neon' ? 'bg-gray-950 bg-opacity-90' :
+                theme === 'classic' ? 'bg-gray-900' : 'bg-white'
               }`}>
-              <div id="piano-app" className="piano relative flex justify-center pb-6 overflow-x-auto">
+              <div id="piano-app" className="piano relative flex justify-center pb-6 overflow-x-auto w-full">
                 <div className="flex relative">
                   {renderPianoKeys()}
                 </div>
@@ -537,9 +537,9 @@ const PianoPage = () => {
           }
         }
       `}</style>
-        <div className={`piano-container rounded-lg overflow-hidden shadow-xl p-4 mb-8 ${theme === 'dark' ? 'bg-gray-900' :
-            theme === 'neon' ? 'bg-gray-950 bg-opacity-90' :
-              theme === 'classic' ? 'bg-gray-900' : 'bg-white'
+        <div className={`piano-container w-full max-w-ful rounded-lg overflow-hidden shadow-xl py-4 mb-8 ${theme === 'dark' ? 'bg-gray-900' :
+          theme === 'neon' ? 'bg-gray-950 bg-opacity-90' :
+            theme === 'classic' ? 'bg-gray-900' : 'bg-white'
           }`}>
           <div id="piano-app" className="piano relative flex justify-center pb-6 overflow-x-auto">
             <div className="flex relative">
