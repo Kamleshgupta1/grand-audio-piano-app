@@ -13,9 +13,9 @@ export const useRoomCleanup = (roomId: string | undefined) => {
   const scheduleRoomDestruction = useCallback(async (currentRoom: any) => {
     if (!roomId || !currentRoom) return;
 
-    // Prevent too frequent cleanup checks (minimum 30 seconds between checks)
+    // Prevent too frequent cleanup checks (minimum 15 seconds between checks)
     const now = Date.now();
-    if (now - lastCleanupCheckRef.current < 30000) {
+    if (now - lastCleanupCheckRef.current < 15000) {
       console.log('useRoomCleanup: Skipping cleanup check - too frequent');
       return;
     }
@@ -34,20 +34,22 @@ export const useRoomCleanup = (roomId: string | undefined) => {
       : 10; // Default 10 minutes if auto-close is disabled
     
     const inactivityTimeoutMs = inactivityTimeoutMinutes * 60 * 1000;
+    const currentTime = Date.now();
 
-    // Enhanced active participant detection
+    // Simplified active participant detection
     const activeParticipants = currentRoom.participants.filter((p: any) => {
+      if (!p.id || p.status !== 'active' || p.isInRoom === false) return false;
+      
       const heartbeatTime = p.heartbeatTimestamp || 0;
       const joinTime = p.joinedAt ? new Date(p.joinedAt).getTime() : 0;
-      const currentTime = Date.now();
       
-      // More lenient criteria for active participants
-      const hasRecentHeartbeat = (currentTime - heartbeatTime) < 120000; // 2 minutes
-      const joinedRecently = (currentTime - joinTime) < 300000; // 5 minutes
-      const isActiveStatus = p.status === 'active';
-      const isInRoom = p.isInRoom !== false;
+      // Consider participant active if:
+      // 1. Has recent heartbeat (within 90 seconds)
+      // 2. Joined recently (within 5 minutes) - gives time to establish presence
+      const hasRecentHeartbeat = (currentTime - heartbeatTime) < 90000;
+      const joinedRecently = (currentTime - joinTime) < 300000;
       
-      return isActiveStatus && isInRoom && (hasRecentHeartbeat || joinedRecently);
+      return hasRecentHeartbeat || joinedRecently;
     });
 
     console.log(`useRoomCleanup: Room ${roomId} cleanup check:`);
