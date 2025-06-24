@@ -5,6 +5,7 @@ import { useRemoteNotePlayer } from './rooms/useRemoteNotePlayer';
 import { useInstrumentListener } from './rooms/useInstrumentListener';
 import { useParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { initializeRealtimeAudio, setMasterVolume } from '@/utils/audio/realtimeAudio';
 
 interface InstrumentNote {
   note: string;
@@ -28,6 +29,8 @@ export const useRoomInstruments = (
   const { roomId } = useParams<{ roomId: string }>();
   const { user } = useAuth();
   
+  const audioInitializedRef = useRef<boolean>(false);
+
   const {
     remotePlaying,
     activeNotes,
@@ -38,6 +41,28 @@ export const useRoomInstruments = (
   } = useRemoteNotePlayer(roomId, user?.uid);
 
   const { broadcastInstrumentNote } = useInstrumentBroadcast(room, setLastActivityTime);
+
+  // Initialize audio system when component mounts
+  useEffect(() => {
+    const initAudio = async () => {
+      if (!audioInitializedRef.current) {
+        try {
+          console.log('useRoomInstruments: Initializing real-time audio system');
+          await initializeRealtimeAudio();
+          
+          // Set appropriate volume for room collaboration
+          setMasterVolume(0.7);
+          
+          audioInitializedRef.current = true;
+          console.log('useRoomInstruments: Audio system ready for collaboration');
+        } catch (error) {
+          console.error('useRoomInstruments: Failed to initialize audio system:', error);
+        }
+      }
+    };
+
+    initAudio();
+  }, []);
 
   useInstrumentListener(
     playRemoteNote,
@@ -58,9 +83,25 @@ export const useRoomInstruments = (
     return () => clearInterval(cleanupInterval);
   }, [mountedRef, echoPreventionRef]);
 
+  // Enhanced broadcast function with audio initialization check
+  const enhancedBroadcastNote = useCallback(async (note: InstrumentNote): Promise<void> => {
+    // Ensure audio is initialized before broadcasting
+    if (!audioInitializedRef.current) {
+      try {
+        await initializeRealtimeAudio();
+        audioInitializedRef.current = true;
+      } catch (error) {
+        console.error('useRoomInstruments: Failed to initialize audio before broadcast:', error);
+      }
+    }
+
+    await broadcastInstrumentNote(note);
+  }, [broadcastInstrumentNote]);
+
   return {
     remotePlaying,
-    broadcastInstrumentNote,
-    activeNotes
+    broadcastInstrumentNote: enhancedBroadcastNote,
+    activeNotes,
+    audioInitialized: audioInitializedRef.current
   };
 };
