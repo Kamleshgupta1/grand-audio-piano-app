@@ -9,19 +9,22 @@ export const useUserRemovalDetection = (room: any, wasParticipant: boolean) => {
   const navigate = useNavigate();
   const { addNotification } = useNotifications();
   const wasParticipantRef = useRef(wasParticipant);
+  const hasBeenRemovedRef = useRef(false);
 
   useEffect(() => {
     wasParticipantRef.current = wasParticipant;
   }, [wasParticipant]);
 
   useEffect(() => {
-    if (!room || !user) return;
+    if (!room || !user || hasBeenRemovedRef.current) return;
 
     const isCurrentlyParticipant = room.participants?.some((p: any) => p.id === user.uid);
     
     // If user was a participant but is no longer in the room, they were removed
     if (wasParticipantRef.current && !isCurrentlyParticipant && room.participants?.length > 0) {
-      console.log('useUserRemovalDetection: User was removed from room, redirecting...');
+      console.log('useUserRemovalDetection: User was removed from room, redirecting immediately...');
+      
+      hasBeenRemovedRef.current = true; // Prevent multiple redirections
       
       addNotification({
         title: "Removed from Room",
@@ -29,10 +32,13 @@ export const useUserRemovalDetection = (room: any, wasParticipant: boolean) => {
         type: "warning"
       });
       
-      // Add a small delay to ensure the notification is seen
-      setTimeout(() => {
-        navigate('/music-rooms');
-      }, 1500);
+      // Immediate redirect
+      navigate('/music-rooms', { replace: true });
     }
   }, [room, user, navigate, addNotification]);
+
+  // Reset removal flag when room changes
+  useEffect(() => {
+    hasBeenRemovedRef.current = false;
+  }, [room?.id]);
 };
