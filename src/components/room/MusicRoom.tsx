@@ -64,7 +64,7 @@ const MusicRoom: React.FC = () => {
       <div className="flex h-screen items-center justify-center">
         <div className="text-center">
           <p className="text-red-500 mb-4">{joinError}</p>
-          <button 
+          <button
             onClick={() => window.location.href = '/music-rooms'}
             className="px-4 py-2 bg-primary text-white rounded"
           >
@@ -81,15 +81,7 @@ const MusicRoom: React.FC = () => {
         <div className="flex flex-col h-full">
           <RoomHeader />
           <JoinRequests />
-          <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-4 p-4">
-            <div className="lg:col-span-1">
-              <RoomParticipants />
-              <RoomChat />
-            </div>
-            <div className="lg:col-span-2">
-              <RoomInstrument />
-            </div>
-          </div>
+          <RoomInstrument />
         </div>
         <PrivateMessaging />
         <JoinPrivateRoom />
