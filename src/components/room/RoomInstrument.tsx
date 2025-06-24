@@ -10,6 +10,7 @@ const RoomInstrument: React.FC = () => {
   const { room, userInfo, remotePlaying } = useRoom();
   const [audioInitialized, setAudioInitialized] = useState(false);
   const [audioError, setAudioError] = useState<string | null>(null);
+  const [userInteracted, setUserInteracted] = useState(false);
   
   // Initialize audio on component mount
   useEffect(() => {
@@ -23,7 +24,7 @@ const RoomInstrument: React.FC = () => {
         console.log('RoomInstrument: Audio system ready');
       } catch (error) {
         console.error('RoomInstrument: Failed to initialize audio:', error);
-        setAudioError('Failed to initialize audio system. Please check your browser permissions.');
+        setAudioError('Audio initialization failed. Please click to enable audio.');
       }
     };
 
@@ -32,13 +33,16 @@ const RoomInstrument: React.FC = () => {
 
   // Handle user interaction to ensure audio context starts
   const handleUserInteraction = async () => {
-    if (!audioInitialized) {
+    setUserInteracted(true);
+    if (!audioInitialized || audioError) {
       try {
+        console.log('RoomInstrument: User interaction - initializing audio');
         await initializeRealtimeAudio();
         setAudioInitialized(true);
         setAudioError(null);
       } catch (error) {
         console.error('RoomInstrument: Failed to start audio on user interaction:', error);
+        setAudioError('Failed to enable audio. Please check browser permissions.');
       }
     }
   };
@@ -56,7 +60,7 @@ const RoomInstrument: React.FC = () => {
     );
   }
 
-  if (audioError) {
+  if (audioError && !userInteracted) {
     return (
       <div className="flex items-center justify-center h-full">
         <Alert variant="destructive">
@@ -65,9 +69,9 @@ const RoomInstrument: React.FC = () => {
             {audioError}
             <button 
               onClick={handleUserInteraction}
-              className="ml-2 px-2 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700"
+              className="ml-2 px-3 py-1 bg-red-600 text-white rounded text-sm hover:bg-red-700 transition-colors"
             >
-              Retry Audio
+              Enable Audio
             </button>
           </AlertDescription>
         </Alert>
@@ -91,7 +95,7 @@ const RoomInstrument: React.FC = () => {
         ) : (
           <div className="flex items-center gap-1 text-orange-600">
             <VolumeX className="h-3 w-3" />
-            <span>Click to enable audio</span>
+            <span>Click anywhere to enable audio</span>
           </div>
         )}
       </div>

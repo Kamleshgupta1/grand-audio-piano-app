@@ -1,66 +1,46 @@
 
-// Real-time audio streaming utilities for music room collaboration
+// Real-time audio system for live music collaboration
 let audioContext: AudioContext | null = null;
-let gainNode: GainNode | null = null;
-let reverbNode: ConvolverNode | null = null;
-let delayNode: DelayNode | null = null;
-let compressorNode: DynamicsCompressorNode | null = null;
-let activeNotes: Map<string, { oscillator: OscillatorNode; gainNode: GainNode; userId: string }> = new Map();
+let masterGainNode: GainNode | null = null;
+let isInitialized = false;
 
-export const initializeRealtimeAudio = async (): Promise<AudioContext> => {
-  if (!audioContext) {
+// Active oscillators for note management
+const activeOscillators = new Map<string, { oscillator: OscillatorNode; gainNode: GainNode; startTime: number }>();
+
+export const initializeRealtimeAudio = async (): Promise<void> => {
+  if (isInitialized && audioContext && audioContext.state !== 'closed') {
+    console.log('realtimeAudio: Audio already initialized');
+    return;
+  }
+
+  try {
+    console.log('realtimeAudio: Initializing audio context');
     audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
     
-    // Create audio processing chain
-    gainNode = audioContext.createGain();
-    compressorNode = audioContext.createDynamicsCompressor();
-    reverbNode = audioContext.createConvolver();
-    delayNode = audioContext.createDelay(1);
-    
-    // Configure compressor for better mixing
-    compressorNode.threshold.setValueAtTime(-20, audioContext.currentTime);
-    compressorNode.knee.setValueAtTime(30, audioContext.currentTime);
-    compressorNode.ratio.setValueAtTime(4, audioContext.currentTime);
-    compressorNode.attack.setValueAtTime(0.003, audioContext.currentTime);
-    compressorNode.release.setValueAtTime(0.25, audioContext.currentTime);
-    
-    // Create reverb impulse response
-    const impulseResponse = createImpulseResponse(audioContext, 2, 2, false);
-    reverbNode.buffer = impulseResponse;
-    
-    // Configure delay for synchronization
-    delayNode.delayTime.setValueAtTime(0.02, audioContext.currentTime);
-    
-    // Chain audio nodes: gain -> compressor -> delay -> reverb -> destination
-    gainNode.connect(compressorNode);
-    compressorNode.connect(delayNode);
-    delayNode.connect(reverbNode);
-    reverbNode.connect(audioContext.destination);
-    
-    // Set initial volume
-    gainNode.gain.setValueAtTime(0.7, audioContext.currentTime);
+    // Resume audio context if suspended
+    if (audioContext.state === 'suspended') {
+      await audioContext.resume();
+    }
+
+    // Create master gain node
+    masterGainNode = audioContext.createGain();
+    masterGainNode.connect(audioContext.destination);
+    masterGainNode.gain.setValueAtTime(0.7, audioContext.currentTime);
+
+    isInitialized = true;
+    console.log('realtimeAudio: Audio system initialized successfully');
+  } catch (error) {
+    console.error('realtimeAudio: Failed to initialize audio:', error);
+    throw error;
   }
-  
-  if (audioContext.state === 'suspended') {
-    await audioContext.resume();
-  }
-  
-  return audioContext;
 };
 
-const createImpulseResponse = (context: AudioContext, duration: number, decay: number, reverse: boolean): AudioBuffer => {
-  const length = context.sampleRate * duration;
-  const impulse = context.createBuffer(2, length, context.sampleRate);
-  
-  for (let channel = 0; channel < 2; channel++) {
-    const channelData = impulse.getChannelData(channel);
-    for (let i = 0; i < length; i++) {
-      const n = reverse ? length - i : i;
-      channelData[i] = (Math.random() * 2 - 1) * Math.pow(1 - n / length, decay);
-    }
+export const setMasterVolume = (volume: number): void => {
+  if (masterGainNode && audioContext) {
+    const clampedVolume = Math.max(0, Math.min(1, volume));
+    masterGainNode.gain.setTargetAtTime(clampedVolume, audioContext.currentTime, 0.1);
+    console.log(`realtimeAudio: Master volume set to ${clampedVolume}`);
   }
-  
-  return impulse;
 };
 
 export const playRealtimeNote = async (
@@ -68,144 +48,190 @@ export const playRealtimeNote = async (
   frequency: number,
   instrument: string,
   userId: string,
-  volume: number = 0.3,
+  velocity: number = 0.7,
   duration: number = 500
 ): Promise<void> => {
-  try {
-    const context = await initializeRealtimeAudio();
-    if (!context || !gainNode) return;
+  if (!audioContext || !masterGainNode) {
+    console.warn('realtimeAudio: Audio not initialized, attempting to initialize');
+    await initializeRealtimeAudio();
+    if (!audioContext || !masterGainNode) {
+      throw new Error('Failed to initialize audio context');
+    }
+  }
 
-    // Stop existing note with same ID to prevent overlap
+  try {
+    // Stop any existing note with the same ID
     stopRealtimeNote(noteId);
 
-    const oscillator = context.createOscillator();
-    const noteGain = context.createGain();
-    const panNode = context.createStereoPanner();
-    const filterNode = context.createBiquadFilter();
-    
-    // Set waveform and frequency based on instrument
-    oscillator.type = getWaveformForInstrument(instrument);
-    oscillator.frequency.setValueAtTime(frequency, context.currentTime);
-    
-    // Configure filter based on instrument
-    filterNode.type = 'lowpass';
-    filterNode.frequency.setValueAtTime(getFilterFrequency(instrument), context.currentTime);
-    filterNode.Q.setValueAtTime(1, context.currentTime);
-    
-    // Spatial positioning based on userId for better separation
-    const userHash = hashUserId(userId);
-    panNode.pan.setValueAtTime(userHash, context.currentTime);
-    
-    // Dynamic volume based on number of active notes to prevent clipping
-    const activeCount = activeNotes.size;
-    const dynamicVolume = volume * Math.max(0.3, 1 / Math.sqrt(activeCount + 1));
-    
-    // Volume envelope for smooth attack/release
-    noteGain.gain.setValueAtTime(0, context.currentTime);
-    noteGain.gain.linearRampToValueAtTime(dynamicVolume, context.currentTime + 0.01);
-    noteGain.gain.exponentialRampToValueAtTime(0.01, context.currentTime + duration / 1000);
-    
-    // Connect nodes: oscillator -> filter -> noteGain -> pan -> main gain chain
+    console.log(`realtimeAudio: Playing note ${noteId} at ${frequency}Hz for ${userId}`);
+
+    // Create oscillator and gain nodes
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    const filterNode = audioContext.createBiquadFilter();
+
+    // Configure oscillator based on instrument
+    const instrumentConfig = getInstrumentConfig(instrument);
+    oscillator.type = instrumentConfig.waveform;
+    oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+
+    // Configure filter for instrument character
+    filterNode.type = instrumentConfig.filterType;
+    filterNode.frequency.setValueAtTime(instrumentConfig.filterFreq, audioContext.currentTime);
+    filterNode.Q.setValueAtTime(instrumentConfig.filterQ, audioContext.currentTime);
+
+    // Configure gain with ADSR envelope
+    const adjustedVelocity = Math.max(0.1, Math.min(1, velocity)) * instrumentConfig.baseVolume;
+    gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+
+    // Attack
+    gainNode.gain.linearRampToValueAtTime(
+      adjustedVelocity,
+      audioContext.currentTime + instrumentConfig.attack
+    );
+
+    // Decay to sustain
+    gainNode.gain.exponentialRampToValueAtTime(
+      adjustedVelocity * instrumentConfig.sustain,
+      audioContext.currentTime + instrumentConfig.attack + instrumentConfig.decay
+    );
+
+    // Connect audio nodes
     oscillator.connect(filterNode);
-    filterNode.connect(noteGain);
-    noteGain.connect(panNode);
-    panNode.connect(gainNode);
-    
-    // Store active note
-    activeNotes.set(noteId, { oscillator, gainNode: noteGain, userId });
-    
-    // Start and schedule stop
-    oscillator.start(context.currentTime);
-    oscillator.stop(context.currentTime + duration / 1000);
-    
-    // Cleanup after note ends
+    filterNode.connect(gainNode);
+    gainNode.connect(masterGainNode);
+
+    // Start oscillator
+    oscillator.start(audioContext.currentTime);
+
+    // Store active oscillator
+    activeOscillators.set(noteId, {
+      oscillator,
+      gainNode,
+      startTime: audioContext.currentTime
+    });
+
+    // Schedule note stop
     setTimeout(() => {
-      activeNotes.delete(noteId);
+      stopRealtimeNote(noteId);
     }, duration);
-    
+
   } catch (error) {
-    console.error('Error playing realtime note:', error);
+    console.error('realtimeAudio: Error playing note:', error);
+    throw error;
   }
 };
 
 export const stopRealtimeNote = (noteId: string): void => {
-  const activeNote = activeNotes.get(noteId);
-  if (activeNote) {
+  const activeNote = activeOscillators.get(noteId);
+  if (activeNote && audioContext) {
     try {
-      activeNote.oscillator.stop();
-      activeNote.gainNode.disconnect();
-      activeNotes.delete(noteId);
+      const { oscillator, gainNode } = activeNote;
+      
+      // Quick fade out to prevent clicks
+      gainNode.gain.setTargetAtTime(0, audioContext.currentTime, 0.05);
+      
+      // Stop oscillator after fade
+      setTimeout(() => {
+        try {
+          oscillator.stop();
+        } catch (e) {
+          // Oscillator might already be stopped
+        }
+      }, 100);
+
+      activeOscillators.delete(noteId);
     } catch (error) {
-      // Note already stopped
+      console.warn('realtimeAudio: Error stopping note:', error);
+      activeOscillators.delete(noteId);
     }
   }
 };
 
-const getWaveformForInstrument = (instrument: string): OscillatorType => {
-  const waveforms: Record<string, OscillatorType> = {
-    'piano': 'sine',
-    'guitar': 'sawtooth',
-    'violin': 'triangle',
-    'flute': 'sine',
-    'saxophone': 'square',
-    'trumpet': 'sawtooth',
-    'drums': 'square',
-    'xylophone': 'sine',
-    'kalimba': 'sine',
-    'marimba': 'triangle',
-    'sitar': 'sawtooth',
-    'veena': 'triangle',
-    'drum': 'square',
-    'drummachine': 'square'
+// Instrument-specific audio configurations
+const getInstrumentConfig = (instrument: string) => {
+  const configs: { [key: string]: any } = {
+    piano: {
+      waveform: 'triangle' as OscillatorType,
+      filterType: 'lowpass' as BiquadFilterType,
+      filterFreq: 2000,
+      filterQ: 1,
+      attack: 0.01,
+      decay: 0.3,
+      sustain: 0.8,
+      release: 1.0,
+      baseVolume: 0.6
+    },
+    guitar: {
+      waveform: 'sawtooth' as OscillatorType,
+      filterType: 'bandpass' as BiquadFilterType,
+      filterFreq: 1500,
+      filterQ: 2,
+      attack: 0.05,
+      decay: 0.2,
+      sustain: 0.6,
+      release: 2.0,
+      baseVolume: 0.5
+    },
+    violin: {
+      waveform: 'sawtooth' as OscillatorType,
+      filterType: 'highpass' as BiquadFilterType,
+      filterFreq: 800,
+      filterQ: 1.5,
+      attack: 0.1,
+      decay: 0.1,
+      sustain: 0.9,
+      release: 1.5,
+      baseVolume: 0.4
+    },
+    flute: {
+      waveform: 'sine' as OscillatorType,
+      filterType: 'lowpass' as BiquadFilterType,
+      filterFreq: 3000,
+      filterQ: 0.5,
+      attack: 0.05,
+      decay: 0.1,
+      sustain: 0.7,
+      release: 1.0,
+      baseVolume: 0.5
+    },
+    drums: {
+      waveform: 'triangle' as OscillatorType,
+      filterType: 'lowpass' as BiquadFilterType,
+      filterFreq: 500,
+      filterQ: 3,
+      attack: 0.001,
+      decay: 0.1,
+      sustain: 0.1,
+      release: 0.5,
+      baseVolume: 0.8
+    }
   };
+
+  return configs[instrument.toLowerCase()] || configs.piano;
+};
+
+// Cleanup function
+export const cleanupRealtimeAudio = (): void => {
+  console.log('realtimeAudio: Cleaning up audio system');
   
-  return waveforms[instrument.toLowerCase()] || 'sine';
-};
+  // Stop all active notes
+  activeOscillators.forEach((_, noteId) => stopRealtimeNote(noteId));
+  activeOscillators.clear();
 
-const getFilterFrequency = (instrument: string): number => {
-  const frequencies: Record<string, number> = {
-    'piano': 8000,
-    'guitar': 6000,
-    'violin': 10000,
-    'flute': 12000,
-    'saxophone': 5000,
-    'trumpet': 7000,
-    'drums': 4000,
-    'xylophone': 15000,
-    'kalimba': 8000,
-    'marimba': 6000,
-    'sitar': 5000,
-    'veena': 6000,
-    'drum': 4000,
-    'drummachine': 4000
-  };
-  
-  return frequencies[instrument.toLowerCase()] || 8000;
-};
-
-const hashUserId = (userId: string): number => {
-  let hash = 0;
-  for (let i = 0; i < userId.length; i++) {
-    const char = userId.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash;
+  // Close audio context
+  if (audioContext && audioContext.state !== 'closed') {
+    audioContext.close();
   }
-  return Math.max(-0.8, Math.min(0.8, hash / 1000000000));
+
+  audioContext = null;
+  masterGainNode = null;
+  isInitialized = false;
 };
 
-export const setMasterVolume = (volume: number): void => {
-  if (gainNode) {
-    gainNode.gain.setValueAtTime(Math.max(0, Math.min(1, volume)), audioContext?.currentTime || 0);
-  }
-};
-
-export const stopAllRealtimeNotes = (): void => {
-  activeNotes.forEach((note, noteId) => {
-    stopRealtimeNote(noteId);
-  });
-  activeNotes.clear();
-};
-
-export const getActiveNotesCount = (): number => {
-  return activeNotes.size;
-};
+// Get audio context state for debugging
+export const getAudioState = () => ({
+  isInitialized,
+  contextState: audioContext?.state,
+  activeNotes: activeOscillators.size
+});

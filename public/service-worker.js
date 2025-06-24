@@ -13,6 +13,13 @@ const urlsToCache = [
   '/static/css/main.css'
 ];
 
+// Define instrument sounds array to fix the error
+const instrumentSounds = [
+  '/sounds/piano/C4.mp3',
+  '/sounds/guitar/chord.mp3',
+  '/sounds/drums/kick.mp3',
+  '/sounds/violin/note.mp3'
+];
 
 // Install event
 self.addEventListener('install', event => {
