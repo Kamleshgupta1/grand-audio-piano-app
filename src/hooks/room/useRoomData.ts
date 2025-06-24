@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../useAuth';
@@ -7,6 +6,7 @@ import { useErrorHandler } from '@/hooks/useErrorHandler';
 import { useRoomState } from './useRoomState';
 import { useRoomPresence } from './useRoomPresence';
 import { useRoomCleanup } from './useRoomCleanup';
+import { useUserRemovalDetection } from './useUserRemovalDetection';
 import { listenToRoomData } from '@/utils/firebase';
 
 export const useRoomData = () => {
@@ -38,6 +38,9 @@ export const useRoomData = () => {
 
   const { scheduleRoomDestruction, clearDestruction } = useRoomCleanup(roomId);
   const { updateFirestorePresence } = useRoomPresence(roomId, isParticipant);
+  
+  // Add user removal detection
+  useUserRemovalDetection(room, isParticipant);
 
   const updateInstrumentPlayTime = useCallback(() => {
     const now = Date.now();

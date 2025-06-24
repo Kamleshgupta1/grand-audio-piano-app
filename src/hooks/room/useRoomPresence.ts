@@ -1,6 +1,6 @@
 
 import { useEffect, useCallback } from 'react';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc, getDoc } from 'firebase/firestore';
 import { getDatabase, ref, onDisconnect, set, onValue, serverTimestamp } from 'firebase/database';
 import { useAuth } from '@/hooks/useAuth';
 import { db } from '@/utils/firebase/config';
@@ -18,8 +18,8 @@ export const useRoomPresence = (roomId: string | undefined, isParticipant: boole
       
       console.log(`useRoomPresence: Updating presence for user ${user.uid} - online: ${isOnline}`);
       
-      // Find the user in participants array and update their data
-      const roomSnap = await roomRef.get();
+      // Fix: Use getDoc instead of roomRef.get()
+      const roomSnap = await getDoc(roomRef);
       if (roomSnap.exists()) {
         const roomData = roomSnap.data();
         const participants = roomData.participants || [];

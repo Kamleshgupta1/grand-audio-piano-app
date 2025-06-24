@@ -6,14 +6,15 @@ import { db } from './config';
 export const saveRoomToFirestore = async (room: any): Promise<void> => {
   try {
     const roomRef = doc(db, "musicRooms", room.id);
-    // Ensure participants and participantIds are properly synchronized
-    // This is crucial for the security rules to work correctly
     const participantIds = room.participants ? room.participants.map((p: any) => p.id) : [];
     
-    // Create join code for private rooms if needed
     if (!room.isPublic && !room.joinCode) {
       room.joinCode = Math.floor(100000 + Math.random() * 900000).toString();
     }
+    
+    // Set default inactivity settings
+    const defaultAutoClose = room.autoCloseAfterInactivity ?? false;
+    const defaultTimeout = defaultAutoClose ? 2 : 10; // 2 minutes if auto-close enabled, 10 minutes if disabled
     
     await setDoc(roomRef, {
       ...room,
@@ -22,15 +23,17 @@ export const saveRoomToFirestore = async (room: any): Promise<void> => {
       hostInstrument: room.hostInstrument || 'piano',
       createdAt: room.createdAt || serverTimestamp(),
       allowDifferentInstruments: room.allowDifferentInstruments ?? true,
-      participantIds: participantIds, // Make sure this is properly synced with participants
-      lastUpdated: serverTimestamp(), // Add this field to track when the room was last updated
-      lastActivity: room.lastActivity || serverTimestamp()
+      participantIds: participantIds,
+      lastUpdated: serverTimestamp(),
+      lastActivity: room.lastActivity || serverTimestamp(),
+      autoCloseAfterInactivity: defaultAutoClose,
+      inactivityTimeout: room.inactivityTimeout || defaultTimeout
     });
 
   } catch (error) {
     console.error("Failed to save room:", error);
     toast({ description: "Failed to save room. Please try again." });
-    throw error; // so calling function can handle it
+    throw error;
   }
 };
 
