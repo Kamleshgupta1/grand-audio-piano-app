@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { lazy, Suspense } from "react";
 import { useRoom } from './RoomContext';
@@ -7,20 +6,23 @@ import { playInstrumentNote } from '@/utils/instruments/instrumentUtils';
 // Instrument Pages - grouped by instrument type for better code splitting
 const AllInstruments: Record<string, React.LazyExoticComponent<React.ComponentType<any>>> = {
   Piano: lazy(() => import("@/components/instruments/piano/piano1/Piano")),
+
   Guitar: lazy(() => import("@/components/instruments/guitar/VirtualGuitarComponent")),
   Violin: lazy(() => import("@/components/instruments/violin/violin2/Violin")),  
   Veena: lazy(() => import("@/components/instruments/veena/Veena1/Veena")),
+
   Flute: lazy(() => import("@/components/instruments/flute/flute2/index")),
   Saxophone: lazy(() => import("@/components/instruments/saxophone/saxophone1/Saxophone")),
   Trumpet: lazy(() => import("@/components/instruments/trumpet/trumpet1/Trumpet")),
+
   Drums: lazy(() => import("@/components/instruments/drum/drums1/Drums")),
   Xylophone: lazy(() => import("@/components/instruments/xylophone/xylophone1/Xylophone")),
   Kalimba: lazy(() => import("@/components/instruments/Kalimba/kalimba2/Kalimba")),
   Marimba: lazy(() => import("@/components/instruments/Marimba/marimba2/Marimba")),
+
   DrumMachine: lazy(() => import("@/components/instruments/drum-machine/DrumMachine")),
   ChordProgression: lazy(() => import("@/components/instruments/chord-Progression/ChordProgressionPlayer")),
   Sitar: lazy(() => import("@/components/instruments/sitar/Sitar1/Sitar")),
-  Harmonica: lazy(() => import("@/components/instruments/harmonica/harmonica1/Harmonica")),
 };
 
 // Helper function to get the instrument component
@@ -61,13 +63,14 @@ const SimpleInstrument: React.FC<SimpleInstrumentProps> = ({ type }) => {
       // Local state update for visual feedback
       setIsPlaying(prev => ({ ...prev, [note]: true }));
       
-      // Broadcast the note to other users in the room (removed velocity property)
+      // Broadcast the note to other users in the room
       if (room && userInfo) {
         await broadcastInstrumentNote({
           note,
           instrument: type,
           userId: userInfo.id,
           userName: userInfo.displayName || userInfo.name || 'Anonymous',
+          velocity: 0.7,
           duration: 500
         });
       }
