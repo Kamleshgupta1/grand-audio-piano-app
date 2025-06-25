@@ -78,10 +78,10 @@ class ToneAudioEngine {
     fluteSynth.connect(this.reverb);
     this.synths.set('flute', fluteSynth);
 
-    // Drums (use noise synth)
-    const drumSynth = new Tone.PolySynth(Tone.NoiseSynth, {
-      noise: { type: 'white' },
-      envelope: { attack: 0.001, decay: 0.1, sustain: 0 }
+    // Drums (use MonoSynth with pulse wave for percussive sound)
+    const drumSynth = new Tone.PolySynth(Tone.MonoSynth, {
+      oscillator: { type: 'pulse' },
+      envelope: { attack: 0.001, decay: 0.1, sustain: 0, release: 0.1 }
     });
     drumSynth.connect(this.reverb);
     this.synths.set('drums', drumSynth);

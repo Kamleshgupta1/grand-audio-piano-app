@@ -17,14 +17,6 @@ import {
 } from '@/utils/firebase';
 import { useState, useEffect } from 'react';
 
-interface InstrumentNote {
-  note: string;
-  instrument: string;
-  userId: string;
-  userName: string;
-  timestamp?: string;
-}
-
 type RoomContextType = {
   room: any;
   isLoading: boolean;
