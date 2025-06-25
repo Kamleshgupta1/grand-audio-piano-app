@@ -3,6 +3,7 @@ import { lazy, Suspense } from "react";
 import { useRoom } from './RoomContext';
 import { playInstrumentNote } from '@/utils/instruments/instrumentUtils';
 import { InstrumentNote } from '@/types/InstrumentNote';
+import SimpleRealtimeAudio from '@/utils/audio/simpleRealtimeAudio';
 
 // Instrument Pages - grouped by instrument type for better code splitting
 const AllInstruments: Record<string, React.LazyExoticComponent<React.ComponentType<any>>> = {
@@ -80,10 +81,14 @@ const SimpleInstrument: React.FC<SimpleInstrumentProps> = ({ type }) => {
       // Play local sound immediately for responsiveness
       await playInstrumentNote(type, noteName, octave, 500, velocity);
       
+      // Also play a simple tone for immediate feedback
+      const audioEngine = SimpleRealtimeAudio.getInstance();
+      audioEngine.playTone(frequency, 500);
+      
       // Local state update for visual feedback
       setIsPlaying(prev => ({ ...prev, [note]: true }));
       
-      // Broadcast the note with frequency data to other users in the room
+      // Broadcast the note to other users in the room
       if (room && userInfo) {
         const noteEvent: InstrumentNote = {
           note,
@@ -94,7 +99,8 @@ const SimpleInstrument: React.FC<SimpleInstrumentProps> = ({ type }) => {
           velocity,
           duration: 500,
           timestamp: new Date().toISOString(),
-          sessionId: `${userInfo.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+          sessionId: `${userInfo.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          roomId: room.id
         };
 
         await broadcastInstrumentNote(noteEvent);
@@ -115,16 +121,21 @@ const SimpleInstrument: React.FC<SimpleInstrumentProps> = ({ type }) => {
     if (remotePlaying && 
         remotePlaying.instrument === type && 
         remotePlaying.note &&
-        remotePlaying.userId !== userInfo?.id) {
+        remotePlaying.userId !== userInfo?.id &&
+        remotePlaying.frequency) {
       
-      console.log(`SimpleInstrument: Received remote note ${remotePlaying.note} from ${remotePlaying.userName}`);
+      console.log(`SimpleInstrument: Playing remote note ${remotePlaying.note} at ${remotePlaying.frequency}Hz from ${remotePlaying.userName}`);
+      
+      // Play the remote note's frequency
+      const audioEngine = SimpleRealtimeAudio.getInstance();
+      audioEngine.playTone(remotePlaying.frequency, remotePlaying.duration || 500);
       
       // Update local state to show visual feedback for remote notes
       setIsPlaying(prev => ({ ...prev, [remotePlaying.note]: true }));
       
       setTimeout(() => {
         setIsPlaying(prev => ({ ...prev, [remotePlaying.note]: false }));
-      }, 500);
+      }, remotePlaying.duration || 500);
     }
   }, [remotePlaying, type, userInfo?.id]);
 
@@ -134,7 +145,7 @@ const SimpleInstrument: React.FC<SimpleInstrumentProps> = ({ type }) => {
         <span className="font-medium">Playing: {type.charAt(0).toUpperCase() + type.slice(1)}</span>
         {remotePlaying && remotePlaying.instrument === type && remotePlaying.userId !== userInfo?.id && (
           <div className="text-xs text-purple-600 mt-1">
-            {remotePlaying.userName} is playing
+            🎵 {remotePlaying.userName} is playing
           </div>
         )}
       </div>
