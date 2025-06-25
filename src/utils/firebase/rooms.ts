@@ -1,4 +1,3 @@
-
 import { 
   collection, 
   doc, 
@@ -17,6 +16,23 @@ import {
   increment
 } from 'firebase/firestore';
 import { db } from './config';
+
+// Save room to Firestore
+export const saveRoomToFirestore = async (roomData: any): Promise<void> => {
+  try {
+    const roomRef = doc(db, 'rooms', roomData.id);
+    await setDoc(roomRef, {
+      ...roomData,
+      isActive: true,
+      createdAt: serverTimestamp(),
+      lastActivity: serverTimestamp()
+    });
+    console.log('Room saved to Firestore successfully');
+  } catch (error) {
+    console.error('Error saving room to Firestore:', error);
+    throw error;
+  }
+};
 
 // Listen to live rooms
 export const listenToLiveRooms = (
