@@ -1,8 +1,8 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { lazy, Suspense } from "react";
 import { useRoom } from './RoomContext';
 import { playInstrumentNote } from '@/utils/instruments/instrumentUtils';
+import { InstrumentNote } from '@/types/InstrumentNote';
 
 // Instrument Pages - grouped by instrument type for better code splitting
 const AllInstruments: Record<string, React.LazyExoticComponent<React.ComponentType<any>>> = {
@@ -45,6 +45,24 @@ const SimpleInstrument: React.FC<SimpleInstrumentProps> = ({ type }) => {
 
   const InstrumentComponent = getInstrumentComponent(type);
 
+  // Convert note to frequency for better audio synchronization
+  const noteToFrequency = useCallback((note: string): number => {
+    const [noteName, octaveStr] = note.includes(':') ? note.split(':') : [note, '4'];
+    const octave = parseInt(octaveStr) || 4;
+    
+    const noteMap: { [key: string]: number } = {
+      'C': 0, 'C#': 1, 'Db': 1, 'D': 2, 'D#': 3, 'Eb': 3,
+      'E': 4, 'F': 5, 'F#': 6, 'Gb': 6, 'G': 7, 'G#': 8,
+      'Ab': 8, 'A': 9, 'A#': 10, 'Bb': 10, 'B': 11
+    };
+
+    const noteIndex = noteMap[noteName] || 9; // Default to A
+    const A4 = 440;
+    const A4_KEY = 69;
+    const midiKey = (octave + 1) * 12 + noteIndex;
+    return A4 * Math.pow(2, (midiKey - A4_KEY) / 12);
+  }, []);
+
   const handlePlayNote = useCallback(async (note: string) => {
     if (!note || typeof note !== 'string') {
       console.error('SimpleInstrument: Invalid note received:', note);
@@ -53,25 +71,33 @@ const SimpleInstrument: React.FC<SimpleInstrumentProps> = ({ type }) => {
     
     console.log(`SimpleInstrument: Playing note ${note} on ${type}`);
     
-    // Parse note to get octave (format: "note:octave" or just "note")
     const [noteName, octaveStr] = note.includes(':') ? note.split(':') : [note, '4'];
     const octave = parseInt(octaveStr) || 4;
+    const frequency = noteToFrequency(note);
+    const velocity = Math.random() * 0.3 + 0.5; // Random velocity between 0.5-0.8
     
     try {
       // Play local sound immediately for responsiveness
-      await playInstrumentNote(type, noteName, octave, 500, 0.7);
+      await playInstrumentNote(type, noteName, octave, 500, velocity);
       
       // Local state update for visual feedback
       setIsPlaying(prev => ({ ...prev, [note]: true }));
       
-      // Broadcast the note to other users in the room (without duration property)
+      // Broadcast the note with frequency data to other users in the room
       if (room && userInfo) {
-        await broadcastInstrumentNote({
+        const noteEvent: InstrumentNote = {
           note,
           instrument: type,
           userId: userInfo.id,
-          userName: userInfo.displayName || userInfo.name || 'Anonymous'
-        });
+          userName: userInfo.displayName || userInfo.name || 'Anonymous',
+          frequency,
+          velocity,
+          duration: 500,
+          timestamp: new Date().toISOString(),
+          sessionId: `${userInfo.id}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+        };
+
+        await broadcastInstrumentNote(noteEvent);
       }
       
     } catch (error) {
@@ -82,7 +108,7 @@ const SimpleInstrument: React.FC<SimpleInstrumentProps> = ({ type }) => {
     setTimeout(() => {
       setIsPlaying(prev => ({ ...prev, [note]: false }));
     }, 500);
-  }, [type, room, userInfo, broadcastInstrumentNote]);
+  }, [type, room, userInfo, broadcastInstrumentNote, noteToFrequency]);
 
   // Listen for remote notes being played by other users
   useEffect(() => {
