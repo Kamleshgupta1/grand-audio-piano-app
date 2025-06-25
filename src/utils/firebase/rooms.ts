@@ -1,205 +1,318 @@
-import { collection, addDoc, query, where, doc, setDoc, getDoc, onSnapshot, serverTimestamp, updateDoc, arrayUnion, arrayRemove, deleteDoc, getDocs } from "firebase/firestore";
-import { toast } from '@/hooks/use-toast';
+import { 
+  collection, 
+  doc, 
+  getDoc, 
+  updateDoc, 
+  deleteDoc, 
+  onSnapshot, 
+  query, 
+  where, 
+  orderBy, 
+  limit,
+  arrayUnion, 
+  arrayRemove, 
+  serverTimestamp,
+  setDoc,
+  increment
+} from 'firebase/firestore';
 import { db } from './config';
 
-// Save or update a room
-export const saveRoomToFirestore = async (room: any): Promise<void> => {
+// Save room to Firestore
+export const saveRoomToFirestore = async (roomData: any): Promise<void> => {
   try {
-    const roomRef = doc(db, "musicRooms", room.id);
-    const participantIds = room.participants ? room.participants.map((p: any) => p.id) : [];
-    
-    if (!room.isPublic && !room.joinCode) {
-      room.joinCode = Math.floor(100000 + Math.random() * 900000).toString();
-    }
-    
-    // Set default inactivity settings
-    const defaultAutoClose = room.autoCloseAfterInactivity ?? false;
-    const defaultTimeout = defaultAutoClose ? 2 : 10; // 2 minutes if auto-close enabled, 10 minutes if disabled
-    
+    const roomRef = doc(db, 'rooms', roomData.id);
     await setDoc(roomRef, {
-      ...room,
-      participants: room.participants || [],
-      maxParticipants: room.maxParticipants || 3,
-      hostInstrument: room.hostInstrument || 'piano',
-      createdAt: room.createdAt || serverTimestamp(),
-      allowDifferentInstruments: room.allowDifferentInstruments ?? true,
-      participantIds: participantIds,
-      lastUpdated: serverTimestamp(),
-      lastActivity: room.lastActivity || serverTimestamp(),
-      autoCloseAfterInactivity: defaultAutoClose,
-      inactivityTimeout: room.inactivityTimeout || defaultTimeout
+      ...roomData,
+      isActive: true,
+      createdAt: serverTimestamp(),
+      lastActivity: serverTimestamp()
     });
-
+    console.log('Room saved to Firestore successfully');
   } catch (error) {
-    console.error("Failed to save room:", error);
-    toast({ description: "Failed to save room. Please try again." });
+    console.error('Error saving room to Firestore:', error);
     throw error;
   }
 };
 
-// Listen to all live rooms
+// Listen to live rooms
 export const listenToLiveRooms = (
-  onSuccess: (rooms: any[]) => void,
-  onError?: (error: any) => void
-) => {
-  return onSnapshot(
-    collection(db, "musicRooms"),
-    (snapshot) => {
-      const rooms = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-        createdAt: doc.data().createdAt || new Date(),
-        participants: doc.data().participants || [],
-        pendingRequests: doc.data().pendingRequests || [],
-        participantIds: doc.data().participantIds || []
-      }));
-      onSuccess(rooms);
-    },
-    (error) => {
-      console.error("🔥 Firestore listener error:", error);
-      if (onError) onError(error);
-    }
-  );
-};
+  onRooms: (rooms: any[]) => void,
+  onError: (error: Error) => void
+): (() => void) => {
+  try {
+    const roomsRef = collection(db, 'rooms');
+    const roomsQuery = query(
+      roomsRef,
+      where('isActive', '==', true),
+      orderBy('createdAt', 'desc'),
+      limit(50)
+    );
 
-// Get room data and listen for updates
-export const listenToRoomData = (
-  roomId: string,
-  onSuccess: (room: any) => void,
-  onError?: (error: any) => void
-) => {
-  const roomRef = doc(db, "musicRooms", roomId);
-  
-  return onSnapshot(
-    roomRef,
-    (doc) => {
-      if (doc.exists()) {
-        const roomData = {
+    const unsubscribe = onSnapshot(
+      roomsQuery,
+      (snapshot) => {
+        const rooms = snapshot.docs.map(doc => ({
           id: doc.id,
-          ...doc.data(),
-          createdAt: doc.data().createdAt || new Date(),
-          participants: doc.data().participants || [],
-          pendingRequests: doc.data().pendingRequests || [],
-          participantIds: doc.data().participantIds || []
-        };
-        console.log('listenToRoomData: Room found and data loaded successfully');
-        onSuccess(roomData);
-      } else {
-        console.log('listenToRoomData: Room document does not exist');
-        // Room doesn't exist - provide more context in error
-        const error = new Error(`Room not found: ${roomId}`);
-        if (onError) onError(error);
+          ...doc.data()
+        }));
+        onRooms(rooms);
+      },
+      (error) => {
+        console.error('Error listening to rooms:', error);
+        onError(error as Error);
       }
-    },
-    (error) => {
-      console.error("listenToRoomData: Firestore listener error:", error);
-      if (onError) onError(error);
-    }
-  );
+    );
+
+    return unsubscribe;
+  } catch (error) {
+    console.error('Error setting up rooms listener:', error);
+    onError(error as Error);
+    return () => {};
+  }
 };
 
-// Delete a room (when destroyed)
+// Add user to room
+export const addUserToRoom = async (roomId: string, user: any): Promise<boolean> => {
+  try {
+    const roomRef = doc(db, 'rooms', roomId);
+    const roomDoc = await getDoc(roomRef);
+    
+    if (!roomDoc.exists()) {
+      console.error('Room does not exist');
+      return false;
+    }
+
+    const roomData = roomDoc.data();
+    const participantIds = roomData.participantIds || [];
+    
+    if (!participantIds.includes(user.uid)) {
+      await updateDoc(roomRef, {
+        participantIds: arrayUnion(user.uid),
+        participants: arrayUnion({
+          id: user.uid,
+          name: user.displayName || 'Anonymous',
+          instrument: 'piano',
+          avatar: user.photoURL || '',
+          isHost: false,
+          status: 'active',
+          joinedAt: new Date().toISOString(),
+          lastSeen: new Date().toISOString()
+        }),
+        lastActivity: serverTimestamp()
+      });
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error adding user to room:', error);
+    return false;
+  }
+};
+
+// Remove user from room (safe version)
+export const removeUserFromRoomSafe = async (roomId: string, userId: string): Promise<void> => {
+  try {
+    const roomRef = doc(db, 'rooms', roomId);
+    const roomDoc = await getDoc(roomRef);
+    
+    if (!roomDoc.exists()) {
+      console.error('Room does not exist');
+      return;
+    }
+
+    const roomData = roomDoc.data();
+    const participants = roomData.participants || [];
+    const updatedParticipants = participants.filter((p: any) => p.id !== userId);
+
+    await updateDoc(roomRef, {
+      participantIds: arrayRemove(userId),
+      participants: updatedParticipants,
+      lastActivity: serverTimestamp()
+    });
+
+    console.log('User removed from room successfully');
+  } catch (error) {
+    console.error('Error removing user from room:', error);
+    throw error;
+  }
+};
+
+// Remove user from room (regular version)
+export const removeUserFromRoom = async (roomId: string, userId: string): Promise<void> => {
+  return removeUserFromRoomSafe(roomId, userId);
+};
+
+// Update user instrument (safe version)
+export const updateUserInstrumentSafe = async (roomId: string, userId: string, instrument: string): Promise<void> => {
+  try {
+    const roomRef = doc(db, 'rooms', roomId);
+    const roomDoc = await getDoc(roomRef);
+    
+    if (!roomDoc.exists()) {
+      console.error('Room does not exist');
+      return;
+    }
+
+    const roomData = roomDoc.data();
+    const participants = roomData.participants || [];
+    const updatedParticipants = participants.map((p: any) => 
+      p.id === userId ? { ...p, instrument } : p
+    );
+
+    await updateDoc(roomRef, {
+      participants: updatedParticipants,
+      lastActivity: serverTimestamp()
+    });
+
+    console.log('User instrument updated successfully');
+  } catch (error) {
+    console.error('Error updating user instrument:', error);
+    throw error;
+  }
+};
+
+// Update user instrument (regular version)
+export const updateUserInstrument = async (roomId: string, userId: string, instrument: string): Promise<void> => {
+  return updateUserInstrumentSafe(roomId, userId, instrument);
+};
+
+// Toggle user mute (safe version)
+export const toggleUserMuteSafe = async (roomId: string, userId: string, mute: boolean): Promise<void> => {
+  try {
+    const roomRef = doc(db, 'rooms', roomId);
+    const roomDoc = await getDoc(roomRef);
+    
+    if (!roomDoc.exists()) {
+      console.error('Room does not exist');
+      return;
+    }
+
+    const roomData = roomDoc.data();
+    const participants = roomData.participants || [];
+    const updatedParticipants = participants.map((p: any) => 
+      p.id === userId ? { ...p, isMuted: mute } : p
+    );
+
+    await updateDoc(roomRef, {
+      participants: updatedParticipants,
+      lastActivity: serverTimestamp()
+    });
+
+    console.log('User mute status updated successfully');
+  } catch (error) {
+    console.error('Error updating user mute status:', error);
+    throw error;
+  }
+};
+
+// Toggle user mute (regular version)
+export const toggleUserMute = async (roomId: string, userId: string, mute: boolean): Promise<void> => {
+  return toggleUserMuteSafe(roomId, userId, mute);
+};
+
+// Update room settings
+export const updateRoomSettings = async (roomId: string, settings: any): Promise<void> => {
+  try {
+    const roomRef = doc(db, 'rooms', roomId);
+    await updateDoc(roomRef, {
+      ...settings,
+      lastActivity: serverTimestamp()
+    });
+    console.log('Room settings updated successfully');
+  } catch (error) {
+    console.error('Error updating room settings:', error);
+    throw error;
+  }
+};
+
+// Toggle room chat
+export const toggleRoomChat = async (roomId: string, disabled: boolean): Promise<void> => {
+  try {
+    await updateRoomSettings(roomId, { isChatDisabled: disabled });
+  } catch (error) {
+    console.error('Error toggling room chat:', error);
+    throw error;
+  }
+};
+
+// Toggle auto close room
+export const toggleAutoCloseRoom = async (roomId: string, enabled: boolean, timeout?: number): Promise<void> => {
+  try {
+    await updateRoomSettings(roomId, { 
+      autoClose: enabled,
+      autoCloseTimeout: timeout || 5
+    });
+  } catch (error) {
+    console.error('Error toggling auto close room:', error);
+    throw error;
+  }
+};
+
+// Handle join request
+export const handleJoinRequest = async (roomId: string, userId: string, approve: boolean): Promise<void> => {
+  try {
+    const roomRef = doc(db, 'rooms', roomId);
+    
+    if (approve) {
+      await updateDoc(roomRef, {
+        pendingRequests: arrayRemove(userId),
+        participantIds: arrayUnion(userId),
+        lastActivity: serverTimestamp()
+      });
+    } else {
+      await updateDoc(roomRef, {
+        pendingRequests: arrayRemove(userId),
+        lastActivity: serverTimestamp()
+      });
+    }
+    
+    console.log('Join request handled successfully');
+  } catch (error) {
+    console.error('Error handling join request:', error);
+    throw error;
+  }
+};
+
+// Delete room from Firestore
 export const deleteRoomFromFirestore = async (roomId: string): Promise<void> => {
   try {
-    const roomRef = doc(db, "musicRooms", roomId);
+    const roomRef = doc(db, 'rooms', roomId);
     await deleteDoc(roomRef);
+    console.log('Room deleted successfully');
   } catch (error) {
-    console.error("Failed to delete room:", error);
-    toast({ description: "Failed to delete room." });
-    throw error; // so calling function can handle it
+    console.error('Error deleting room:', error);
+    throw error;
   }
 };
 
-// Save a room template
-export const saveRoomTemplate = async (
-  userId: string,
-  template: any
-): Promise<string | null> => {
+// Listen to room data
+export const listenToRoomData = (
+  roomId: string,
+  onRoom: (room: any) => void,
+  onError: (error: Error) => void
+): (() => void) => {
   try {
-    const templateRef = await addDoc(collection(db, "roomTemplates"), {
-      ...template,
-      creatorId: userId,
-      createdAt: serverTimestamp()
-    });
-    
-    return templateRef.id;
-  } catch (error) {
-    console.error("Error saving room template:", error);
-    toast({ description: "Failed to save room template." });
-    return null;
-  }
-};
+    const roomRef = doc(db, 'rooms', roomId);
 
-// Create a room from a template
-export const createRoomFromTemplate = async (
-  template: any,
-  user: any
-): Promise<string | null> => {
-  try {
-    // Generate a unique ID for the new room
-    const roomId = doc(collection(db, "musicRooms")).id;
-    
-    // Create the host participant
-    const hostParticipant = {
-      id: user.uid,
-      name: user.displayName || 'Anonymous',
-      instrument: template.hostInstrument || 'piano',
-      avatar: user.photoURL || '',
-      isHost: true,
-      status: 'active'
-    };
-    
-    // Create the new room with template settings
-    const newRoom = {
-      id: roomId,
-      name: template.name || 'Music Room',
-      description: template.description || '',
-      isPublic: template.isPublic ?? true,
-      maxParticipants: template.maxParticipants || 3,
-      hostInstrument: template.hostInstrument || 'piano',
-      allowDifferentInstruments: template.allowDifferentInstruments ?? true,
-      participants: [hostParticipant],
-      participantIds: [user.uid],
-      pendingRequests: [],
-      createdAt: serverTimestamp(),
-      creatorId: user.uid,
-      lastUpdated: serverTimestamp(),
-      lastActivity: serverTimestamp()
-    };
-    
-    await setDoc(doc(db, "musicRooms", roomId), newRoom);
-    
-    return roomId;
-  } catch (error) {
-    console.error("Error creating room from template:", error);
-    toast({ description: "Failed to create room from template." });
-    return null;
-  }
-};
+    const unsubscribe = onSnapshot(
+      roomRef,
+      (doc) => {
+        if (doc.exists()) {
+          onRoom({ id: doc.id, ...doc.data() });
+        } else {
+          onError(new Error('Room not found'));
+        }
+      },
+      (error) => {
+        console.error('Error listening to room data:', error);
+        onError(error as Error);
+      }
+    );
 
-// Get user's room templates
-export const getUserRoomTemplates = (
-  userId: string,
-  onSuccess: (templates: any[]) => void,
-  onError?: (error: any) => void
-) => {
-  const q = query(
-    collection(db, "roomTemplates"),
-    where("creatorId", "==", userId)
-  );
-  
-  return onSnapshot(
-    q,
-    (snapshot) => {
-      const templates = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      onSuccess(templates);
-    },
-    (error) => {
-      console.error("Error getting room templates:", error);
-      if (onError) onError(error);
-    }
-  );
+    return unsubscribe;
+  } catch (error) {
+    console.error('Error setting up room data listener:', error);
+    onError(error as Error);
+    return () => {};
+  }
 };
