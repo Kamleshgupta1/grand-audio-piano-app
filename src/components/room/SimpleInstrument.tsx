@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { lazy, Suspense } from "react";
 import { useRoom } from './RoomContext';
@@ -63,14 +64,13 @@ const SimpleInstrument: React.FC<SimpleInstrumentProps> = ({ type }) => {
       // Local state update for visual feedback
       setIsPlaying(prev => ({ ...prev, [note]: true }));
       
-      // Broadcast the note to other users in the room
+      // Broadcast the note to other users in the room (without velocity property)
       if (room && userInfo) {
         await broadcastInstrumentNote({
           note,
           instrument: type,
           userId: userInfo.id,
           userName: userInfo.displayName || userInfo.name || 'Anonymous',
-          velocity: 0.7,
           duration: 500
         });
       }

@@ -9,7 +9,6 @@ interface InstrumentNote {
   userId: string;
   userName: string;
   timestamp?: string;
-  velocity?: number;
   duration?: number;
   sessionId?: string;
   serverTimestamp?: number;
@@ -77,7 +76,10 @@ export const useRemoteNotePlayer = (roomId?: string, userId?: string) => {
   }, []);
 
   const playRemoteNote = useCallback(async (noteData: InstrumentNote) => {
-    if (!mountedRef.current || !audioInitializedRef.current) return;
+    if (!mountedRef.current || !audioInitializedRef.current) {
+      console.log('useRemoteNotePlayer: Audio not ready or component unmounted');
+      return;
+    }
     
     try {
       console.log('useRemoteNotePlayer: Processing remote note:', noteData);
@@ -87,8 +89,13 @@ export const useRemoteNotePlayer = (roomId?: string, userId?: string) => {
         return;
       }
 
+      // Skip if this is our own note
+      if (noteData.userId === userId) {
+        console.log('useRemoteNotePlayer: Skipping own note');
+        return;
+      }
+
       const frequency = convertNoteToFrequency(noteData.note);
-      const velocity = Math.min(Math.max(noteData.velocity || 0.7, 0.1), 1.0);
       const duration = Math.min(Math.max(noteData.duration || 500, 100), 3000);
       
       // Enhanced echo prevention
@@ -116,13 +123,15 @@ export const useRemoteNotePlayer = (roomId?: string, userId?: string) => {
       }
 
       // Use real-time audio system for better quality and synchronization
-      const noteId = `${noteData.userId}-${noteData.note}-${Date.now()}`;
+      const noteId = `remote-${noteData.userId}-${noteData.note}-${Date.now()}`;
+      console.log(`useRemoteNotePlayer: Playing remote note ${noteId} at ${frequency}Hz`);
+      
       await playRealtimeNote(
         noteId,
         frequency,
         noteData.instrument,
         noteData.userId,
-        velocity,
+        0.8, // Higher volume for remote notes to ensure they're audible
         duration
       );
 
