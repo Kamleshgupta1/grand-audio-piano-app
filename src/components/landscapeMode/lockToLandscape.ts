@@ -70,7 +70,9 @@ export const lockToLandscape = async (): Promise<void> => {
 
     // Enter fullscreen first and wait for it to be stable
     await enterFullscreen();
-    
+    await new Promise(resolve => setTimeout(resolve, 500)); // give extra room for stability
+
+
     // Wait a moment for fullscreen to stabilize
     await new Promise(resolve => setTimeout(resolve, 300));
 
