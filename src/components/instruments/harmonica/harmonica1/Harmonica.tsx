@@ -8,7 +8,7 @@ import { TutorialButton } from '../../../Tutorial/TutorialButton';
 import { Slider } from "@/components/ui/slider";
 import { useRef, useState } from 'react';
 import SoundControls from '../../../../utils/music/SoundControls';
-import { toggleFullscreen } from "@/components/landscapeMode/lockToLandscape";
+import { toggleFullscreen, lockToLandscape } from "@/components/landscapeMode/lockToLandscape";
 import FullscreenWrapper from "@/components/landscapeMode/FullscreenWrapper";
 
 interface HarmonicaProps {
@@ -50,6 +50,17 @@ const Harmonica = ({ variant = 'standard' }: HarmonicaProps) => {
     { key: "1-8", description: "Play different holes" }
   ];
 
+  const handleZoomClick = async () => {
+    try {
+      if (containerRef.current) {
+        await lockToLandscape();
+        await toggleFullscreen(containerRef.current);
+      }
+    } catch (error) {
+      console.error('Failed to enter landscape fullscreen:', error);
+    }
+  };
+
   return (
     <div className="w-full rounded-xl">
       <div className="mb-8 flex justify-between items-center">
@@ -68,7 +79,7 @@ const Harmonica = ({ variant = 'standard' }: HarmonicaProps) => {
 
         <div className="landscape-warning text-xs text-muted-foreground  dark:bg-white/5 p-2 rounded-md">
           <p>
-            <strong onClick={() => toggleFullscreen(containerRef.current)} className="ml-2 bg-gradient-to-r from-purple-500 to-blue-500 bg-clip-text text-transparent hover:brightness-110 hover:scale-[1.03]">
+            <strong onClick={handleZoomClick} className="ml-2 bg-gradient-to-r from-purple-500 to-blue-500 bg-clip-text text-transparent hover:brightness-110 hover:scale-[1.03] cursor-pointer">
               ⛶Zoom
             </strong>
           </p>
@@ -92,22 +103,16 @@ const Harmonica = ({ variant = 'standard' }: HarmonicaProps) => {
       </FullscreenWrapper>
 
       <div className="mt-8 space-y-4">
-
         <SoundControls
           volume={volume}
           setVolume={setVolume}
           isMuted={isMuted}
           setIsMuted={setIsMuted}
           breathIntensity={breathIntensity}
-          setBreathIntensity={setBreathIntensity}
+          setBrethIntensity={setBreathIntensity}
           toneColor={toneColor}
           setToneColor={setToneColor}
         />
-
-
-        {/* <div className="text-center text-muted-foreground text-sm">
-          Click on the holes to play or use keyboard keys 1-8
-        </div> */}
       </div>
     </div>
   );

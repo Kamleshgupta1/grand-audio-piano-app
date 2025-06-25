@@ -7,15 +7,18 @@ import RecordingControlsShared from '@/components/recording/RecordingControlsSha
 import { lockToLandscape } from "../../../landscapeMode/lockToLandscape";
 import LandscapeInstrumentModal from '../../../landscapeMode/LandscapeInstrumentModal';
 
-
 const FlutePage = () => {
-
   const [open, setOpen] = useState(false);
   const handleOpen = async () => {
-    //await lockToLandscape();
-    setOpen(true);
+    try {
+      await lockToLandscape();
+      setOpen(true);
+    } catch (error) {
+      console.error('Failed to lock to landscape:', error);
+      // Still open the modal even if landscape lock fails
+      setOpen(true);
+    }
   };
-
 
   return (
     <InstrumentPageWrapper
@@ -33,7 +36,7 @@ const FlutePage = () => {
           </div>
           <div className="text-center landscape-warning text-xs text-muted-foreground bg-purple-100 p-2 border border-purple-400 dark:bg-white/5 p-2 rounded-md mb-6">
             <p>For the best experience, expand to full screen.
-              <strong onClick={handleOpen} className="ml-2 bg-gradient-to-r from-purple-500 to-blue-500 bg-clip-text text-transparent ">
+              <strong onClick={handleOpen} className="ml-2 bg-gradient-to-r from-purple-500 to-blue-500 bg-clip-text text-transparent cursor-pointer hover:brightness-110">
                 Click here to expand
               </strong>
             </p>
@@ -42,13 +45,7 @@ const FlutePage = () => {
             </LandscapeInstrumentModal>
           </div>
         </div>
-
-
-
       </div>
-      {/* <div className="w-full flex flex-col md:flex-row items-center justify-center gap-6 ">
-        <RecordingControlsShared instrumentName="Flute" primaryColor="bg-blue-500" />
-        </div> */}
 
       <div className="w-full bg-white animate-scale-in" style={{ animationDelay: '200ms' }}>
         <Flute />

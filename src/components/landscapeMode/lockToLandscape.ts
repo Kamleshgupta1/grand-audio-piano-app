@@ -19,11 +19,14 @@ const isMobileDevice = (): boolean => {
 // Global state to prevent concurrent operations
 let isLockingOrientation = false;
 let currentLockState = false;
+let fullscreenElement: HTMLElement | null = null;
 
 export const enterFullscreen = async (element: HTMLElement = document.documentElement): Promise<void> => {
   if (!document.fullscreenElement && element.requestFullscreen) {
     try {
       await element.requestFullscreen();
+      fullscreenElement = element;
+      console.log("✅ Entered fullscreen mode");
     } catch (error) {
       console.error("❌ Fullscreen request failed:", error);
     }
@@ -34,6 +37,8 @@ export const exitFullscreen = async (): Promise<void> => {
   if (document.fullscreenElement && document.exitFullscreen) {
     try {
       await document.exitFullscreen();
+      fullscreenElement = null;
+      console.log("✅ Exited fullscreen mode");
     } catch (error) {
       console.error("❌ Exit fullscreen failed:", error);
     }
@@ -61,16 +66,48 @@ export const lockToLandscape = async (): Promise<void> => {
   isLockingOrientation = true;
 
   try {
+    // First enter fullscreen
     await enterFullscreen();
+    
+    // Wait a bit for fullscreen to stabilize
+    await new Promise(resolve => setTimeout(resolve, 500));
 
     const orientation = screen.orientation as ScreenOrientation & {
       lock: (orientation: OrientationLockType) => Promise<void>;
     };
 
     if (orientation.lock) {
-      await orientation.lock("landscape");
+      // Try landscape-primary first, then fallback to landscape
+      try {
+        await orientation.lock("landscape-primary");
+        console.log("✅ Screen locked to landscape-primary");
+      } catch (primaryError) {
+        console.warn("⚠️ landscape-primary failed, trying landscape:", primaryError);
+        await orientation.lock("landscape");
+        console.log("✅ Screen locked to landscape");
+      }
+      
       currentLockState = true;
-      console.log("✅ Screen locked to landscape");
+      
+      // Add event listener to maintain lock
+      const handleOrientationChange = () => {
+        if (currentLockState && orientation.lock) {
+          // Re-lock if orientation changes unexpectedly
+          setTimeout(() => {
+            orientation.lock("landscape-primary").catch(() => {
+              orientation.lock("landscape").catch(console.warn);
+            });
+          }, 100);
+        }
+      };
+      
+      window.addEventListener('orientationchange', handleOrientationChange);
+      
+      // Store cleanup function
+      (window as any).__landscapeLockCleanup = () => {
+        window.removeEventListener('orientationchange', handleOrientationChange);
+      };
+      
     } else {
       console.warn("⚠️ Orientation lock not supported by this browser.");
     }
@@ -90,7 +127,11 @@ export const unlockOrientation = async (): Promise<void> => {
   if (!isMobileDevice() || !("orientation" in screen)) return;
 
   try {
-    await exitFullscreen();
+    // Clean up event listeners
+    if ((window as any).__landscapeLockCleanup) {
+      (window as any).__landscapeLockCleanup();
+      delete (window as any).__landscapeLockCleanup;
+    }
 
     const orientation = screen.orientation as ScreenOrientation & {
       unlock?: () => void;
@@ -102,6 +143,12 @@ export const unlockOrientation = async (): Promise<void> => {
 
     currentLockState = false;
     console.log("🔓 Screen orientation unlocked");
+    
+    // Exit fullscreen after a brief delay
+    setTimeout(async () => {
+      await exitFullscreen();
+    }, 300);
+    
   } catch (err) {
     console.error("❌ Orientation Unlock Failed:", err);
   }
@@ -236,7 +283,7 @@ export const toggleFullscreen = async (element?: HTMLElement): Promise<boolean> 
   }
 };
 
-// Single event listener setup
+// Enhanced event listener setup
 let fullscreenListenerAdded = false;
 
 if (!fullscreenListenerAdded && typeof document !== 'undefined') {
@@ -246,6 +293,12 @@ if (!fullscreenListenerAdded && typeof document !== 'undefined') {
       removeFullscreenStyles();
       restoreAriaHidden();
       currentLockState = false; // Reset lock state when fullscreen exits
+      
+      // Clean up orientation lock
+      if ((window as any).__landscapeLockCleanup) {
+        (window as any).__landscapeLockCleanup();
+        delete (window as any).__landscapeLockCleanup;
+      }
     }
   });
   fullscreenListenerAdded = true;
