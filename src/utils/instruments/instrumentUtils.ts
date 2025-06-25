@@ -1,5 +1,5 @@
 
-import { playRealtimeNote, initializeRealtimeAudio } from '@/utils/audio/realtimeAudio';
+import { playRemoteNote, initializeRealtimeAudio } from '@/utils/audio/realtimeAudio';
 
 // Initialize audio system
 let audioInitialized = false;
@@ -50,17 +50,15 @@ export const playInstrumentNote = async (
     await ensureAudioInitialized();
     
     const frequency = noteToFrequency(note, octave);
-    const noteId = `local-${note}-${octave}-${Date.now()}`;
     
     console.log(`instrumentUtils: Playing ${instrument} note ${note}${octave} at ${frequency}Hz`);
     
-    await playRealtimeNote(
-      noteId,
-      frequency,
+    await playRemoteNote(
       instrument,
-      'local-user',
+      frequency,
       velocity,
-      duration
+      duration,
+      'local-user'
     );
   } catch (error) {
     console.error('instrumentUtils: Error playing instrument note:', error);
