@@ -64,14 +64,13 @@ const SimpleInstrument: React.FC<SimpleInstrumentProps> = ({ type }) => {
       // Local state update for visual feedback
       setIsPlaying(prev => ({ ...prev, [note]: true }));
       
-      // Broadcast the note to other users in the room (without velocity property)
+      // Broadcast the note to other users in the room (without duration property)
       if (room && userInfo) {
         await broadcastInstrumentNote({
           note,
           instrument: type,
           userId: userInfo.id,
-          userName: userInfo.displayName || userInfo.name || 'Anonymous',
-          duration: 500
+          userName: userInfo.displayName || userInfo.name || 'Anonymous'
         });
       }
       
