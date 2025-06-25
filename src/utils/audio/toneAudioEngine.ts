@@ -26,11 +26,14 @@ class ToneAudioEngine {
     if (this.initialized) return;
 
     try {
+      // Ensure audio context is running
       if (Tone.context.state !== 'running') {
         await Tone.start();
+        console.log('ToneAudioEngine: Audio context started');
       }
 
       // Connect effects chain
+      await this.reverb.generate();
       this.reverb.connect(this.compressor);
       this.compressor.connect(this.masterVolume);
 
