@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, ReactNode } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
@@ -8,7 +9,6 @@ import { useRoomInstruments } from '@/hooks/useRoomInstruments';
 import { useParticipantManagement } from '@/hooks/useParticipantManagement';
 import { useRoomJoin } from '@/hooks/useRoomJoin';
 import { useRoomActions } from '@/hooks/useRoomActions';
-import { InstrumentNote } from '@/types/InstrumentNote';
 import {
   sendPrivateMessage,
   getPrivateMessages,
@@ -16,6 +16,14 @@ import {
   listenForUnreadMessages
 } from '@/utils/firebase';
 import { useState, useEffect } from 'react';
+
+interface InstrumentNote {
+  note: string;
+  instrument: string;
+  userId: string;
+  userName: string;
+  timestamp?: string;
+}
 
 type RoomContextType = {
   room: any;

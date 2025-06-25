@@ -5,7 +5,20 @@ import { useAuth } from '@/hooks/useAuth';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useErrorHandler } from '@/hooks/useErrorHandler';
 import { broadcastNote, updateRoomSettings } from '@/utils/firebase';
-import { InstrumentNote } from '@/types/InstrumentNote';
+
+interface InstrumentNote {
+  note: string;
+  instrument: string;
+  userId: string;
+  userName: string;
+  timestamp?: string;
+  velocity?: number;
+  duration?: number;
+  sessionId?: string;
+  serverTimestamp?: number;
+  clientId?: string;
+  roomId?: string;
+}
 
 export const useInstrumentBroadcast = (
   room: any,
@@ -28,13 +41,13 @@ export const useInstrumentBroadcast = (
     }
 
     try {
-      console.log('useInstrumentBroadcast: Broadcasting note:', note.note, 'with frequency:', note.frequency);
+      console.log('useInstrumentBroadcast: Broadcasting note:', note.note);
       
-      const enhancedNote: InstrumentNote = {
+      const enhancedNote = {
         ...note,
         timestamp: new Date().toISOString(),
         serverTimestamp: Date.now(),
-        sessionId: note.sessionId || `${user.uid}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        sessionId: `${user.uid}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         clientId: user.uid,
         roomId: roomId,
         velocity: Math.min(Math.max(note.velocity || 0.7, 0.1), 1.0),

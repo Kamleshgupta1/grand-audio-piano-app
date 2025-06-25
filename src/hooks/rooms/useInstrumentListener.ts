@@ -4,7 +4,20 @@ import { useParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useErrorHandler } from '@/hooks/useErrorHandler';
 import { listenToInstrumentNotes } from '@/utils/firebase';
-import { InstrumentNote } from '@/types/InstrumentNote';
+
+interface InstrumentNote {
+  note: string;
+  instrument: string;
+  userId: string;
+  userName: string;
+  timestamp?: string;
+  velocity?: number;
+  duration?: number;
+  sessionId?: string;
+  serverTimestamp?: number;
+  clientId?: string;
+  roomId?: string;
+}
 
 export const useInstrumentListener = (
   playRemoteNote: (noteData: InstrumentNote) => void,
@@ -65,7 +78,7 @@ export const useInstrumentListener = (
             return;
           }
 
-          console.log(`useInstrumentListener: Received remote note ${noteData.note} from ${noteData.userName} with frequency ${noteData.frequency}Hz`);
+          console.log('useInstrumentListener: Received remote note from:', noteData.userId);
           
           const serverTime = noteData.serverTimestamp || (noteData.timestamp ? new Date(noteData.timestamp).getTime() : Date.now());
           const timeDiff = Math.abs(Date.now() - serverTime);

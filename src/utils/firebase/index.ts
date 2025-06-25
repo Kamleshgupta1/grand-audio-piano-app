@@ -1,7 +1,54 @@
 
-// Re-export all Firebase utilities
-export * from './config';
+// Re-export all firebase utilities
 export * from './auth';
+export * from './config';
+export * from './room-chat';
 export * from './rooms';
-export * from './instrumentNotes';
-export * from './chat';
+
+// Export safe participant management functions
+export {
+  removeUserFromRoomSafe,
+  updateUserInstrumentSafe,
+  toggleUserMuteSafe
+} from './room-operations';
+
+// Export legacy participant management functions (deprecated - use safe versions)
+export {
+  isUserRoomParticipant,
+  addUserToRoom,
+  removeUserFromRoom,
+  updateUserInstrument,
+  toggleUserMute
+} from './room-participant-management';
+
+// Export room joining functions
+export {
+  joinRoomWithCode,
+  requestToJoinRoom
+} from './room-joining';
+
+// Export room lifecycle functions
+export {
+  handleJoinRequest,
+  toggleRoomChat,
+  toggleAutoCloseRoom,
+  updateRoomSettings
+} from './room-lifecycle';
+
+// Export room settings functions
+export {
+  broadcastNote,
+  listenToInstrumentNotes
+} from './room-settings';
+
+// Import and export Firebase Firestore functions needed
+import { doc, onSnapshot, getFirestore } from 'firebase/firestore';
+import { app } from './config';
+
+const db = getFirestore(app);
+
+export {
+  doc,
+  onSnapshot,
+  db
+};

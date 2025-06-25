@@ -5,8 +5,21 @@ import { useRemoteNotePlayer } from './rooms/useRemoteNotePlayer';
 import { useInstrumentListener } from './rooms/useInstrumentListener';
 import { useParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import ToneAudioEngine from '@/utils/audio/toneAudioEngine';
-import { InstrumentNote } from '@/types/InstrumentNote';
+import { initializeRealtimeAudio, setMasterVolume } from '@/utils/audio/realtimeAudio';
+
+interface InstrumentNote {
+  note: string;
+  instrument: string;
+  userId: string;
+  userName: string;
+  timestamp?: string;
+  velocity?: number;
+  duration?: number;
+  sessionId?: string;
+  serverTimestamp?: number;
+  clientId?: string;
+  roomId?: string;
+}
 
 export const useRoomInstruments = (
   room: any, 
@@ -29,20 +42,21 @@ export const useRoomInstruments = (
 
   const { broadcastInstrumentNote } = useInstrumentBroadcast(room, setLastActivityTime);
 
-  // Initialize Tone.js audio system when component mounts
+  // Initialize audio system when component mounts
   useEffect(() => {
     const initAudio = async () => {
       if (!audioInitializedRef.current) {
         try {
-          console.log('useRoomInstruments: Initializing Tone.js audio system');
-          const audioEngine = ToneAudioEngine.getInstance();
-          await audioEngine.initialize();
-          audioEngine.setMasterVolume(0.8);
+          console.log('useRoomInstruments: Initializing real-time audio system');
+          await initializeRealtimeAudio();
+          
+          // Set appropriate volume for room collaboration
+          setMasterVolume(0.7);
           
           audioInitializedRef.current = true;
-          console.log('useRoomInstruments: Tone.js audio system ready for collaboration');
+          console.log('useRoomInstruments: Audio system ready for collaboration');
         } catch (error) {
-          console.error('useRoomInstruments: Failed to initialize Tone.js audio system:', error);
+          console.error('useRoomInstruments: Failed to initialize audio system:', error);
         }
       }
     };
@@ -74,8 +88,7 @@ export const useRoomInstruments = (
     // Ensure audio is initialized before broadcasting
     if (!audioInitializedRef.current) {
       try {
-        const audioEngine = ToneAudioEngine.getInstance();
-        await audioEngine.initialize();
+        await initializeRealtimeAudio();
         audioInitializedRef.current = true;
       } catch (error) {
         console.error('useRoomInstruments: Failed to initialize audio before broadcast:', error);
