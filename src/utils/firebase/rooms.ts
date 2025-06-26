@@ -1,4 +1,5 @@
 
+
 import { 
   collection, 
   doc, 
@@ -55,11 +56,11 @@ export const listenToLiveRooms = (
           return {
             id: doc.id,
             ...data
-          };
+          } as any; // Type assertion to fix TypeScript error
         });
         
         // Sort on client side to avoid index requirement
-        rooms.sort((a, b) => {
+        rooms.sort((a: any, b: any) => {
           const timeA = a.createdAt?.toDate?.() || new Date(0);
           const timeB = b.createdAt?.toDate?.() || new Date(0);
           return timeB.getTime() - timeA.getTime();
