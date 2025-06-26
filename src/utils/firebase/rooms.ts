@@ -7,7 +7,6 @@ import {
   onSnapshot, 
   query, 
   where, 
-  orderBy, 
   limit,
   arrayUnion, 
   arrayRemove, 
@@ -34,7 +33,7 @@ export const saveRoomToFirestore = async (roomData: any): Promise<void> => {
   }
 };
 
-// Listen to live rooms
+// Listen to live rooms - simplified query without orderBy to avoid index requirement
 export const listenToLiveRooms = (
   onRooms: (rooms: any[]) => void,
   onError: (error: Error) => void
@@ -44,7 +43,6 @@ export const listenToLiveRooms = (
     const roomsQuery = query(
       roomsRef,
       where('isActive', '==', true),
-      orderBy('createdAt', 'desc'),
       limit(50)
     );
 
@@ -55,6 +53,12 @@ export const listenToLiveRooms = (
           id: doc.id,
           ...doc.data()
         }));
+        // Sort on client side to avoid index requirement
+        rooms.sort((a, b) => {
+          const timeA = a.createdAt?.toDate?.() || new Date(0);
+          const timeB = b.createdAt?.toDate?.() || new Date(0);
+          return timeB.getTime() - timeA.getTime();
+        });
         onRooms(rooms);
       },
       (error) => {
@@ -71,7 +75,7 @@ export const listenToLiveRooms = (
   }
 };
 
-// Add user to room
+// Add user to room - improved version
 export const addUserToRoom = async (roomId: string, user: any): Promise<boolean> => {
   try {
     const roomRef = doc(db, 'rooms', roomId);
@@ -84,24 +88,41 @@ export const addUserToRoom = async (roomId: string, user: any): Promise<boolean>
 
     const roomData = roomDoc.data();
     const participantIds = roomData.participantIds || [];
+    const participants = roomData.participants || [];
     
-    if (!participantIds.includes(user.uid)) {
-      await updateDoc(roomRef, {
-        participantIds: arrayUnion(user.uid),
-        participants: arrayUnion({
-          id: user.uid,
-          name: user.displayName || 'Anonymous',
-          instrument: 'piano',
-          avatar: user.photoURL || '',
-          isHost: false,
-          status: 'active',
-          joinedAt: new Date().toISOString(),
-          lastSeen: new Date().toISOString()
-        }),
-        lastActivity: serverTimestamp()
-      });
+    // Check if user is already a participant
+    if (participantIds.includes(user.uid)) {
+      console.log('User is already a participant in the room');
+      return true;
     }
 
+    // Check room capacity
+    if (participantIds.length >= (roomData.maxParticipants || 3)) {
+      console.error('Room is at maximum capacity');
+      return false;
+    }
+
+    const newParticipant = {
+      id: user.uid,
+      name: user.displayName || user.email || 'Anonymous',
+      instrument: 'piano', // Default instrument
+      avatar: user.photoURL || '',
+      isHost: false,
+      status: 'active',
+      joinedAt: new Date().toISOString(),
+      lastSeen: new Date().toISOString(),
+      isInRoom: true,
+      heartbeatTimestamp: Date.now()
+    };
+
+    // Add user to room
+    await updateDoc(roomRef, {
+      participantIds: arrayUnion(user.uid),
+      participants: arrayUnion(newParticipant),
+      lastActivity: serverTimestamp()
+    });
+
+    console.log('User successfully added to room');
     return true;
   } catch (error) {
     console.error('Error adding user to room:', error);

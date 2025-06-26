@@ -37,10 +37,10 @@ export const useRoomData = () => {
   const [roomDataListener, setRoomDataListener] = useState<(() => void) | null>(null);
   const [roomLoadStartTime, setRoomLoadStartTime] = useState<number>(Date.now());
 
+  // Disable automatic room cleanup to prevent premature destruction
   const { scheduleRoomDestruction, clearDestruction } = useRoomCleanup(roomId);
   const { updateFirestorePresence } = useRoomPresence(roomId, isParticipant);
   
-  // Add user removal detection with current participation status
   useUserRemovalDetection(room, isParticipant);
 
   const updateInstrumentPlayTime = useCallback(() => {
@@ -102,18 +102,9 @@ export const useRoomData = () => {
           // Update user status
           updateUserStatus(user.uid, normalizedRoom);
 
-          // Schedule room cleanup after a reasonable delay
-          // Only check for cleanup after room has been loaded for at least 45 seconds
-          const roomAge = Date.now() - roomLoadStartTime;
-          if (roomAge > 45000) {
-            console.log('useRoomData: Room is mature enough for cleanup checks');
-            // Add delay to prevent race conditions with presence updates
-            setTimeout(() => {
-              scheduleRoomDestruction(normalizedRoom);
-            }, 5000);
-          } else {
-            console.log(`useRoomData: Room is too young for cleanup (${roomAge}ms old), skipping destruction check`);
-          }
+          // DISABLED: Automatic room cleanup to prevent premature destruction
+          // Only allow manual room closure by host
+          console.log('useRoomData: Automatic room cleanup disabled to prevent premature destruction');
 
         } catch (error) {
           console.error('useRoomData: Error processing room data:', error);
@@ -153,7 +144,7 @@ export const useRoomData = () => {
         unsubscribeRoom();
       }
     };
-  }, [roomId, user?.uid, navigate, addNotification, handleFirebaseError, handleAsyncError, normalizeRoomData, updateUserStatus, scheduleRoomDestruction, clearDestruction]);
+  }, [roomId, user?.uid, navigate, addNotification, handleFirebaseError, handleAsyncError, normalizeRoomData, updateUserStatus, clearDestruction]);
 
   return {
     room,

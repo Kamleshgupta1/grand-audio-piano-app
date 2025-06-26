@@ -5,55 +5,57 @@ import SimpleInstrument from './SimpleInstrument';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle, Volume2, VolumeX, Mic, MicOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import SystemAudioShare from '@/utils/audio/systemAudioShare';
 
 const RoomInstrument: React.FC = () => {
   const { room, userInfo } = useRoom();
-  const [microphoneEnabled, setMicrophoneEnabled] = useState(false);
+  const [isAudioSharing, setIsAudioSharing] = useState(false);
   const [audioError, setAudioError] = useState<string | null>(null);
   const [userInteracted, setUserInteracted] = useState(false);
-  const [mediaStream, setMediaStream] = useState<MediaStream | null>(null);
   
+  const audioShare = SystemAudioShare.getInstance();
+
   // Handle user interaction to enable audio context
   const handleUserInteraction = useCallback(async () => {
-    setUserInteracted(true);
-    setAudioError(null);
-  }, []);
+    if (!userInteracted) {
+      setUserInteracted(true);
+      setAudioError(null);
+      
+      // Initialize system audio
+      const initialized = await audioShare.initializeSystemAudio();
+      if (!initialized) {
+        setAudioError('Failed to initialize audio system');
+      }
+    }
+  }, [userInteracted, audioShare]);
 
-  const handleMicrophoneToggle = useCallback(async () => {
+  const handleAudioToggle = useCallback(async () => {
     try {
-      if (!microphoneEnabled) {
-        const stream = await navigator.mediaDevices.getUserMedia({ 
-          audio: {
-            echoCancellation: true,
-            noiseSuppression: true,
-            autoGainControl: true
-          } 
-        });
-        setMediaStream(stream);
-        setMicrophoneEnabled(true);
-        console.log('RoomInstrument: Microphone enabled for room collaboration');
-      } else {
-        if (mediaStream) {
-          mediaStream.getTracks().forEach(track => track.stop());
-          setMediaStream(null);
+      if (!isAudioSharing) {
+        const success = await audioShare.startSystemAudioSharing();
+        if (success) {
+          setIsAudioSharing(true);
+          console.log('RoomInstrument: System audio sharing enabled');
+        } else {
+          setAudioError('Failed to start audio sharing. Please allow microphone/system audio access.');
         }
-        setMicrophoneEnabled(false);
-        console.log('RoomInstrument: Microphone disabled');
+      } else {
+        audioShare.stopSystemAudioSharing();
+        setIsAudioSharing(false);
+        console.log('RoomInstrument: System audio sharing disabled');
       }
     } catch (error) {
-      console.error('RoomInstrument: Error toggling microphone:', error);
-      setAudioError('Failed to access microphone. Please check browser permissions.');
+      console.error('RoomInstrument: Error toggling audio sharing:', error);
+      setAudioError('Audio sharing failed. Please check browser permissions.');
     }
-  }, [microphoneEnabled, mediaStream]);
+  }, [isAudioSharing, audioShare]);
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      if (mediaStream) {
-        mediaStream.getTracks().forEach(track => track.stop());
-      }
+      audioShare.stopSystemAudioSharing();
     };
-  }, [mediaStream]);
+  }, [audioShare]);
   
   if (!room || !userInfo) {
     return (
@@ -89,39 +91,39 @@ const RoomInstrument: React.FC = () => {
 
   return (
     <div className="flex flex-col h-full" onClick={handleUserInteraction}>
-      {/* Audio status and controls */}
+      {/* Audio sharing controls */}
       <div className="flex items-center justify-between gap-2 mb-2 text-xs bg-gray-50 dark:bg-gray-800 p-2 rounded-lg">
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1 text-green-600">
+          <div className={`flex items-center gap-1 ${isAudioSharing ? 'text-green-600' : 'text-gray-500'}`}>
             <Volume2 className="h-3 w-3" />
-            <span>Audio Ready - System audio will be shared</span>
+            <span>{isAudioSharing ? 'Audio Sharing Active' : 'Audio Ready'}</span>
           </div>
         </div>
         
         <Button
-          onClick={handleMicrophoneToggle}
+          onClick={handleAudioToggle}
           variant="ghost"
           size="sm"
           className="h-6 px-2 text-xs"
         >
-          {microphoneEnabled ? (
+          {isAudioSharing ? (
             <>
               <Mic className="h-3 w-3 mr-1" />
-              Mic On
+              Stop Sharing
             </>
           ) : (
             <>
               <MicOff className="h-3 w-3 mr-1" />
-              Enable Mic
+              Share Audio
             </>
           )}
         </Button>
       </div>
 
-      {microphoneEnabled && (
+      {isAudioSharing && (
         <div className="text-xs text-blue-600 mb-2 flex items-center gap-1 bg-blue-50 dark:bg-blue-900/20 p-2 rounded">
           <Mic className="h-3 w-3" />
-          Microphone active - others can hear your voice and system audio
+          Your audio is being shared - others can hear your instrument sounds
         </div>
       )}
 

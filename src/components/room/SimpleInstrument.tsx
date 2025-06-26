@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import { lazy, Suspense } from "react";
 import { useRoom } from './RoomContext';
 import { playInstrumentNote } from '@/utils/instruments/instrumentUtils';
@@ -54,7 +54,7 @@ const SimpleInstrument: React.FC<SimpleInstrumentProps> = ({ type }) => {
     const velocity = Math.random() * 0.3 + 0.5; // Random velocity between 0.5-0.8
     
     try {
-      // Play local sound - system audio will be shared automatically
+      // Play local sound - system audio sharing will handle transmission to other users
       await playInstrumentNote(type, noteName, octave, 500, velocity);
       
       // Local state update for visual feedback
