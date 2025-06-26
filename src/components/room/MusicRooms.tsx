@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AppLayout from '@/components/layout/AppLayout';
@@ -70,6 +69,7 @@ const MusicRooms = () => {
             
             const normalizedRoom = {
               ...room,
+              hostId: room.hostId || room.creatorId || '', // Fix: Include hostId
               participants,
               pendingRequests: Array.isArray(room.pendingRequests) ? room.pendingRequests : [],
               participantIds: Array.isArray(room.participantIds) ? room.participantIds : [],
@@ -79,7 +79,7 @@ const MusicRooms = () => {
               allowDifferentInstruments: typeof room.allowDifferentInstruments === 'boolean' ? room.allowDifferentInstruments : true
             };
             
-            console.log(`MusicRooms: Room ${room.id} - participants: ${participants.length}/${normalizedRoom.maxParticipants}, isPublic: ${normalizedRoom.isPublic}`);
+            console.log(`MusicRooms: Room ${room.id} - participants: ${participants.length}/${normalizedRoom.maxParticipants}, isPublic: ${normalizedRoom.isPublic}, hostId: ${normalizedRoom.hostId}`);
             return normalizedRoom;
           });
           
