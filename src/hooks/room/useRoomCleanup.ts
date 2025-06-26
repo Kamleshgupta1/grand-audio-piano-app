@@ -13,9 +13,9 @@ export const useRoomCleanup = (roomId: string | undefined) => {
   const scheduleRoomDestruction = useCallback(async (currentRoom: any) => {
     if (!roomId || !currentRoom) return;
 
-    // Prevent too frequent cleanup checks (minimum 10 seconds between checks)
+    // Prevent too frequent cleanup checks (minimum 5 seconds between checks)
     const now = Date.now();
-    if (now - lastCleanupCheckRef.current < 10000) {
+    if (now - lastCleanupCheckRef.current < 5000) {
       console.log('useRoomCleanup: Skipping cleanup check - too frequent');
       return;
     }
@@ -27,55 +27,51 @@ export const useRoomCleanup = (roomId: string | undefined) => {
       destructionTimeoutRef.current = null;
     }
 
-    // Get the inactivity timeout from room settings
-    const autoCloseEnabled = currentRoom.autoCloseAfterInactivity ?? true; // Default to enabled
-    const inactivityTimeoutMinutes = autoCloseEnabled 
-      ? (currentRoom.inactivityTimeout || 5) 
-      : 10; // Default 10 minutes if auto-close is disabled
+    // Get current participants and filter for truly active ones
+    const participants = currentRoom.participants || [];
+    const participantIds = currentRoom.participantIds || [];
     
-    const inactivityTimeoutMs = inactivityTimeoutMinutes * 60 * 1000;
-    const currentTime = Date.now();
-
-    // Check for truly active participants
-    const activeParticipants = currentRoom.participants.filter((p: any) => {
-      if (!p.id || p.status !== 'active' || p.isInRoom === false) return false;
-      
-      const heartbeatTime = p.heartbeatTimestamp || 0;
-      const joinTime = p.joinedAt ? new Date(p.joinedAt).getTime() : 0;
+    // Check for active participants more strictly
+    const activeParticipants = participants.filter((p: any) => {
+      if (!p.id || !participantIds.includes(p.id)) return false;
       
       // Consider participant active if:
-      // 1. Has recent heartbeat (within 2 minutes)
-      // 2. Joined recently (within 3 minutes) - gives time to establish presence
-      const hasRecentHeartbeat = (currentTime - heartbeatTime) < 120000; // 2 minutes
-      const joinedRecently = (currentTime - joinTime) < 180000; // 3 minutes
+      // 1. Status is active AND isInRoom is not false
+      // 2. Has recent heartbeat (within 2 minutes) OR joined recently (within 1 minute)
+      const isStatusActive = p.status === 'active' && p.isInRoom !== false;
+      const heartbeatTime = p.heartbeatTimestamp || 0;
+      const joinTime = p.joinedAt ? new Date(p.joinedAt).getTime() : 0;
+      const currentTime = Date.now();
       
-      return hasRecentHeartbeat || joinedRecently;
+      const hasRecentHeartbeat = (currentTime - heartbeatTime) < 120000; // 2 minutes
+      const joinedRecently = (currentTime - joinTime) < 60000; // 1 minute
+      
+      return isStatusActive && (hasRecentHeartbeat || joinedRecently);
     });
 
     console.log(`useRoomCleanup: Room ${roomId} cleanup analysis:`);
-    console.log(`- Total participants: ${currentRoom.participants.length}`);
+    console.log(`- Total participants: ${participants.length}`);
+    console.log(`- Participant IDs: ${participantIds.length}`);
     console.log(`- Active participants: ${activeParticipants.length}`);
-    console.log(`- Auto-close enabled: ${autoCloseEnabled}`);
-    console.log(`- Inactivity timeout: ${inactivityTimeoutMinutes} minutes`);
 
-    if (activeParticipants.length === 0) {
-      console.log(`useRoomCleanup: No active participants detected, scheduling destruction in ${inactivityTimeoutMinutes} minutes`);
+    // Only destroy if there are truly no active participants
+    if (activeParticipants.length === 0 && participantIds.length === 0) {
+      console.log('useRoomCleanup: No active participants detected, scheduling destruction in 10 seconds');
       
       destructionTimeoutRef.current = setTimeout(async () => {
         try {
-          // Double-check before destroying
           console.log('useRoomCleanup: Executing room destruction due to inactivity');
           await deleteRoomFromFirestore(roomId);
           navigate('/music-rooms');
           addNotification({
             title: "Room Closed",
-            message: `Room was automatically closed after ${inactivityTimeoutMinutes} minutes of inactivity`,
+            message: "Room was automatically closed as all participants have left",
             type: "info"
           });
         } catch (error) {
           console.error('useRoomCleanup: Error destroying empty room:', error);
         }
-      }, Math.min(inactivityTimeoutMs, 300000)); // Max 5 minutes delay
+      }, 10000); // 10 seconds delay to allow for reconnections
     } else {
       console.log(`useRoomCleanup: Room has ${activeParticipants.length} active participants, not scheduling destruction`);
     }

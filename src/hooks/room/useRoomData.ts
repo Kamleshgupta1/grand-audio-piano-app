@@ -35,7 +35,6 @@ export const useRoomData = () => {
   const [lastActivityTime, setLastActivityTime] = useState<number>(Date.now());
   const [lastInstrumentPlayTime, setLastInstrumentPlayTime] = useState<number>(Date.now());
   const [roomDataListener, setRoomDataListener] = useState<(() => void) | null>(null);
-  const [roomLoadStartTime, setRoomLoadStartTime] = useState<number>(Date.now());
 
   // Enable automatic room cleanup with proper timing
   const { scheduleRoomDestruction, clearDestruction } = useRoomCleanup(roomId);
@@ -49,25 +48,6 @@ export const useRoomData = () => {
     setLastInstrumentPlayTime(now);
   }, []);
 
-  const checkForRoomDestruction = useCallback((currentRoom: any) => {
-    if (!currentRoom || !roomId) return;
-
-    const activeParticipants = currentRoom.participants.filter((p: any) => 
-      p.status === 'active' && p.isInRoom !== false && p.id
-    );
-
-    console.log(`useRoomData: Room ${roomId} has ${activeParticipants.length} active participants`);
-
-    // Only schedule destruction if no active participants
-    if (activeParticipants.length === 0) {
-      console.log('useRoomData: No active participants, scheduling room destruction');
-      scheduleRoomDestruction(currentRoom);
-    } else {
-      console.log('useRoomData: Room has active participants, clearing any scheduled destruction');
-      clearDestruction();
-    }
-  }, [roomId, scheduleRoomDestruction, clearDestruction]);
-
   useEffect(() => {
     if (!roomId || !user) {
       console.log(`useRoomData: Missing requirements - roomId: ${roomId}, user: ${!!user}`);
@@ -77,7 +57,6 @@ export const useRoomData = () => {
 
     console.log(`useRoomData: Setting up room data listener for room ${roomId}`);
     setIsLoading(true);
-    setRoomLoadStartTime(Date.now());
     clearDestruction();
 
     // Clean up previous listener if it exists
@@ -121,11 +100,10 @@ export const useRoomData = () => {
           // Update user status
           updateUserStatus(user.uid, normalizedRoom);
 
-          // Check for room auto-close after room has been loaded for a while
-          // This gives time for participants to establish presence
+          // Schedule room destruction check with delay to allow for proper participant updates
           setTimeout(() => {
-            checkForRoomDestruction(normalizedRoom);
-          }, 3000);
+            scheduleRoomDestruction(normalizedRoom);
+          }, 5000);
 
         } catch (error) {
           console.error('useRoomData: Error processing room data:', error);
@@ -165,7 +143,7 @@ export const useRoomData = () => {
         unsubscribeRoom();
       }
     };
-  }, [roomId, user?.uid, navigate, addNotification, handleFirebaseError, handleAsyncError, normalizeRoomData, updateUserStatus, clearDestruction, checkForRoomDestruction]);
+  }, [roomId, user?.uid, navigate, addNotification, handleFirebaseError, handleAsyncError, normalizeRoomData, updateUserStatus, clearDestruction, scheduleRoomDestruction]);
 
   return {
     room,

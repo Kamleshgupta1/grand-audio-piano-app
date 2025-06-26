@@ -16,6 +16,18 @@ const RoomInstrument: React.FC = () => {
   
   const audioShare = SystemAudioShare.getInstance();
 
+  // Update room participants when room changes
+  useEffect(() => {
+    if (room?.participants) {
+      const participantIds = room.participants
+        .filter((p: any) => p.id !== userInfo?.id && p.status === 'active')
+        .map((p: any) => p.id);
+      
+      audioShare.updateRoomParticipants(participantIds);
+      console.log('RoomInstrument: Updated room participants for audio sharing:', participantIds);
+    }
+  }, [room?.participants, userInfo?.id, audioShare]);
+
   // Handle user interaction to enable audio context
   const handleUserInteraction = useCallback(async () => {
     if (!userInteracted) {
@@ -105,6 +117,10 @@ const RoomInstrument: React.FC = () => {
     );
   }
 
+  const activeParticipants = room.participants?.filter((p: any) => 
+    p.id !== userInfo.id && p.status === 'active'
+  )?.length || 0;
+
   return (
     <div className="flex flex-col h-full" onClick={handleUserInteraction}>
       {/* Audio sharing controls */}
@@ -112,7 +128,7 @@ const RoomInstrument: React.FC = () => {
         <div className="flex items-center gap-2">
           <div className={`flex items-center gap-1 ${isAudioSharing ? 'text-green-600' : 'text-gray-500'}`}>
             <Volume2 className="h-3 w-3" />
-            <span>{isAudioSharing ? 'Audio Sharing Active' : 'Audio Ready'}</span>
+            <span>{isAudioSharing ? `Sharing to ${activeParticipants} user(s)` : 'Audio Ready'}</span>
             {isAudioSharing && (
               <div className="flex items-center gap-1 ml-2">
                 <div className="h-2 w-8 bg-gray-200 rounded-full overflow-hidden">
@@ -149,7 +165,7 @@ const RoomInstrument: React.FC = () => {
       {isAudioSharing && (
         <div className="text-xs text-blue-600 mb-2 flex items-center gap-1 bg-blue-50 dark:bg-blue-900/20 p-2 rounded">
           <Mic className="h-3 w-3" />
-          Your audio is being shared - others can hear your instrument sounds
+          Your audio is being shared with {activeParticipants} participant(s) - others can hear your instrument sounds
         </div>
       )}
 

@@ -5,6 +5,8 @@ class SystemAudioShare {
   private audioContext: AudioContext | null = null;
   private isSharing = false;
   private isInitialized = false;
+  private roomParticipants: string[] = [];
+  private peerConnections: Map<string, RTCPeerConnection> = new Map();
 
   private constructor() {}
 
@@ -76,6 +78,8 @@ class SystemAudioShare {
             this.stopSystemAudioSharing();
           });
           
+          // Share with room participants
+          this.shareWithParticipants();
           return true;
         }
       } catch (displayError) {
@@ -100,6 +104,7 @@ class SystemAudioShare {
         if (this.localStream) {
           this.isSharing = true;
           console.log('SystemAudioShare: Microphone audio sharing started as fallback');
+          this.shareWithParticipants();
           return true;
         }
       } catch (micError) {
@@ -122,8 +127,66 @@ class SystemAudioShare {
       });
       this.localStream = null;
     }
+
+    // Close all peer connections
+    this.peerConnections.forEach((pc, participantId) => {
+      pc.close();
+      console.log('SystemAudioShare: Closed peer connection for participant:', participantId);
+    });
+    this.peerConnections.clear();
+
     this.isSharing = false;
     console.log('SystemAudioShare: System audio sharing stopped');
+  }
+
+  public updateRoomParticipants(participants: string[]): void {
+    console.log('SystemAudioShare: Updating room participants:', participants);
+    this.roomParticipants = participants;
+    
+    if (this.isSharing) {
+      this.shareWithParticipants();
+    }
+  }
+
+  private async shareWithParticipants(): Promise<void> {
+    if (!this.localStream || this.roomParticipants.length === 0) return;
+
+    for (const participantId of this.roomParticipants) {
+      if (!this.peerConnections.has(participantId)) {
+        await this.createPeerConnection(participantId);
+      }
+    }
+
+    // Remove connections for participants who left
+    for (const [participantId, pc] of this.peerConnections) {
+      if (!this.roomParticipants.includes(participantId)) {
+        pc.close();
+        this.peerConnections.delete(participantId);
+        console.log('SystemAudioShare: Removed peer connection for left participant:', participantId);
+      }
+    }
+  }
+
+  private async createPeerConnection(participantId: string): Promise<void> {
+    try {
+      const pc = new RTCPeerConnection({
+        iceServers: [
+          { urls: 'stun:stun.l.google.com:19302' }
+        ]
+      });
+
+      // Add local stream to peer connection
+      if (this.localStream) {
+        this.localStream.getTracks().forEach(track => {
+          pc.addTrack(track, this.localStream!);
+        });
+      }
+
+      this.peerConnections.set(participantId, pc);
+      console.log('SystemAudioShare: Created peer connection for participant:', participantId);
+    } catch (error) {
+      console.error('SystemAudioShare: Failed to create peer connection for participant:', participantId, error);
+    }
   }
 
   public getLocalStream(): MediaStream | null {
@@ -160,6 +223,7 @@ class SystemAudioShare {
       this.audioContext = null;
     }
     this.isInitialized = false;
+    this.roomParticipants = [];
     console.log('SystemAudioShare: Disposed');
   }
 }
