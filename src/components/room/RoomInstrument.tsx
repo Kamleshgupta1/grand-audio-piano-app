@@ -12,6 +12,7 @@ const RoomInstrument: React.FC = () => {
   const [isAudioSharing, setIsAudioSharing] = useState(false);
   const [audioError, setAudioError] = useState<string | null>(null);
   const [userInteracted, setUserInteracted] = useState(false);
+  const [audioLevel, setAudioLevel] = useState(0);
   
   const audioShare = SystemAudioShare.getInstance();
 
@@ -35,6 +36,7 @@ const RoomInstrument: React.FC = () => {
         const success = await audioShare.startSystemAudioSharing();
         if (success) {
           setIsAudioSharing(true);
+          setAudioError(null);
           console.log('RoomInstrument: System audio sharing enabled');
         } else {
           setAudioError('Failed to start audio sharing. Please allow microphone/system audio access.');
@@ -42,12 +44,26 @@ const RoomInstrument: React.FC = () => {
       } else {
         audioShare.stopSystemAudioSharing();
         setIsAudioSharing(false);
+        setAudioLevel(0);
         console.log('RoomInstrument: System audio sharing disabled');
       }
     } catch (error) {
       console.error('RoomInstrument: Error toggling audio sharing:', error);
       setAudioError('Audio sharing failed. Please check browser permissions.');
+      setIsAudioSharing(false);
     }
+  }, [isAudioSharing, audioShare]);
+
+  // Monitor audio level when sharing
+  useEffect(() => {
+    if (!isAudioSharing) return;
+
+    const interval = setInterval(() => {
+      const level = audioShare.getAudioLevel();
+      setAudioLevel(level);
+    }, 100);
+
+    return () => clearInterval(interval);
   }, [isAudioSharing, audioShare]);
 
   // Cleanup on unmount
@@ -97,6 +113,16 @@ const RoomInstrument: React.FC = () => {
           <div className={`flex items-center gap-1 ${isAudioSharing ? 'text-green-600' : 'text-gray-500'}`}>
             <Volume2 className="h-3 w-3" />
             <span>{isAudioSharing ? 'Audio Sharing Active' : 'Audio Ready'}</span>
+            {isAudioSharing && (
+              <div className="flex items-center gap-1 ml-2">
+                <div className="h-2 w-8 bg-gray-200 rounded-full overflow-hidden">
+                  <div 
+                    className="h-full bg-green-500 transition-all duration-100"
+                    style={{ width: `${Math.min(audioLevel * 100, 100)}%` }}
+                  />
+                </div>
+              </div>
+            )}
           </div>
         </div>
         

@@ -4,6 +4,7 @@ class SystemAudioShare {
   private localStream: MediaStream | null = null;
   private audioContext: AudioContext | null = null;
   private isSharing = false;
+  private isInitialized = false;
 
   private constructor() {}
 
@@ -16,6 +17,11 @@ class SystemAudioShare {
 
   public async initializeSystemAudio(): Promise<boolean> {
     try {
+      if (this.isInitialized) {
+        console.log('SystemAudioShare: Already initialized');
+        return true;
+      }
+
       // Initialize audio context for system audio capture
       this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
       
@@ -23,71 +29,97 @@ class SystemAudioShare {
         await this.audioContext.resume();
       }
 
-      console.log('SystemAudioShare: Audio context initialized');
+      this.isInitialized = true;
+      console.log('SystemAudioShare: Audio context initialized successfully');
       return true;
     } catch (error) {
       console.error('SystemAudioShare: Failed to initialize audio context:', error);
+      this.isInitialized = false;
       return false;
     }
   }
 
   public async startSystemAudioSharing(): Promise<boolean> {
     try {
+      if (!this.isInitialized) {
+        const initialized = await this.initializeSystemAudio();
+        if (!initialized) {
+          return false;
+        }
+      }
+
       if (this.isSharing) {
         console.log('SystemAudioShare: Already sharing system audio');
         return true;
       }
 
-      // Request system audio capture (works in Chrome with user gesture)
-      const constraints = {
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true,
-          sampleRate: 44100,
-          channelCount: 2
-        },
-        video: false
-      };
-
-      this.localStream = await navigator.mediaDevices.getUserMedia(constraints);
-      
-      if (this.localStream) {
-        this.isSharing = true;
-        console.log('SystemAudioShare: System audio sharing started');
+      // First try to get system audio directly
+      try {
+        this.localStream = await navigator.mediaDevices.getDisplayMedia({
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true,
+            sampleRate: 44100,
+            channelCount: 2
+          },
+          video: false
+        });
         
-        // For system audio, we would typically use getDisplayMedia with audio: true
-        // but this requires user interaction and permission
-        try {
-          const systemStream = await navigator.mediaDevices.getDisplayMedia({
-            audio: true,
-            video: false
+        if (this.localStream && this.localStream.getAudioTracks().length > 0) {
+          this.isSharing = true;
+          console.log('SystemAudioShare: System audio capture enabled successfully');
+          
+          // Set up track ended handler
+          this.localStream.getAudioTracks()[0].addEventListener('ended', () => {
+            console.log('SystemAudioShare: System audio track ended');
+            this.stopSystemAudioSharing();
           });
           
-          if (systemStream.getAudioTracks().length > 0) {
-            console.log('SystemAudioShare: System audio capture enabled');
-            // Replace the microphone audio with system audio
-            const audioTrack = systemStream.getAudioTracks()[0];
-            this.localStream.removeTrack(this.localStream.getAudioTracks()[0]);
-            this.localStream.addTrack(audioTrack);
-          }
-        } catch (displayError) {
-          console.log('SystemAudioShare: System audio capture not available, using microphone');
+          return true;
         }
+      } catch (displayError) {
+        console.log('SystemAudioShare: System audio not available, falling back to microphone');
+      }
 
-        return true;
+      // Fallback to microphone audio
+      try {
+        const constraints = {
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true,
+            sampleRate: 44100,
+            channelCount: 2
+          },
+          video: false
+        };
+
+        this.localStream = await navigator.mediaDevices.getUserMedia(constraints);
+        
+        if (this.localStream) {
+          this.isSharing = true;
+          console.log('SystemAudioShare: Microphone audio sharing started as fallback');
+          return true;
+        }
+      } catch (micError) {
+        console.error('SystemAudioShare: Failed to access microphone:', micError);
       }
 
       return false;
     } catch (error) {
       console.error('SystemAudioShare: Failed to start system audio sharing:', error);
+      this.isSharing = false;
       return false;
     }
   }
 
   public stopSystemAudioSharing(): void {
     if (this.localStream) {
-      this.localStream.getTracks().forEach(track => track.stop());
+      this.localStream.getTracks().forEach(track => {
+        track.stop();
+        console.log('SystemAudioShare: Stopped audio track:', track.kind);
+      });
       this.localStream = null;
     }
     this.isSharing = false;
@@ -99,15 +131,36 @@ class SystemAudioShare {
   }
 
   public isCurrentlySharing(): boolean {
-    return this.isSharing;
+    return this.isSharing && this.localStream !== null;
+  }
+
+  public getAudioLevel(): number {
+    if (!this.localStream || !this.audioContext) return 0;
+    
+    try {
+      const source = this.audioContext.createMediaStreamSource(this.localStream);
+      const analyser = this.audioContext.createAnalyser();
+      source.connect(analyser);
+      
+      const dataArray = new Uint8Array(analyser.frequencyBinCount);
+      analyser.getByteFrequencyData(dataArray);
+      
+      const average = dataArray.reduce((sum, value) => sum + value, 0) / dataArray.length;
+      return average / 255;
+    } catch (error) {
+      console.error('SystemAudioShare: Error getting audio level:', error);
+      return 0;
+    }
   }
 
   public dispose(): void {
     this.stopSystemAudioSharing();
-    if (this.audioContext) {
+    if (this.audioContext && this.audioContext.state !== 'closed') {
       this.audioContext.close();
       this.audioContext = null;
     }
+    this.isInitialized = false;
+    console.log('SystemAudioShare: Disposed');
   }
 }
 

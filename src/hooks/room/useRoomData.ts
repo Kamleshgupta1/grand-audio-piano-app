@@ -37,7 +37,7 @@ export const useRoomData = () => {
   const [roomDataListener, setRoomDataListener] = useState<(() => void) | null>(null);
   const [roomLoadStartTime, setRoomLoadStartTime] = useState<number>(Date.now());
 
-  // Disable automatic room cleanup to prevent premature destruction
+  // Enable automatic room cleanup with proper timing
   const { scheduleRoomDestruction, clearDestruction } = useRoomCleanup(roomId);
   const { updateFirestorePresence } = useRoomPresence(roomId, isParticipant);
   
@@ -48,6 +48,25 @@ export const useRoomData = () => {
     console.log('useRoomData: Updating instrument play time:', new Date(now).toISOString());
     setLastInstrumentPlayTime(now);
   }, []);
+
+  const checkForRoomDestruction = useCallback((currentRoom: any) => {
+    if (!currentRoom || !roomId) return;
+
+    const activeParticipants = currentRoom.participants.filter((p: any) => 
+      p.status === 'active' && p.isInRoom !== false && p.id
+    );
+
+    console.log(`useRoomData: Room ${roomId} has ${activeParticipants.length} active participants`);
+
+    // Only schedule destruction if no active participants
+    if (activeParticipants.length === 0) {
+      console.log('useRoomData: No active participants, scheduling room destruction');
+      scheduleRoomDestruction(currentRoom);
+    } else {
+      console.log('useRoomData: Room has active participants, clearing any scheduled destruction');
+      clearDestruction();
+    }
+  }, [roomId, scheduleRoomDestruction, clearDestruction]);
 
   useEffect(() => {
     if (!roomId || !user) {
@@ -102,9 +121,11 @@ export const useRoomData = () => {
           // Update user status
           updateUserStatus(user.uid, normalizedRoom);
 
-          // DISABLED: Automatic room cleanup to prevent premature destruction
-          // Only allow manual room closure by host
-          console.log('useRoomData: Automatic room cleanup disabled to prevent premature destruction');
+          // Check for room auto-close after room has been loaded for a while
+          // This gives time for participants to establish presence
+          setTimeout(() => {
+            checkForRoomDestruction(normalizedRoom);
+          }, 3000);
 
         } catch (error) {
           console.error('useRoomData: Error processing room data:', error);
@@ -144,7 +165,7 @@ export const useRoomData = () => {
         unsubscribeRoom();
       }
     };
-  }, [roomId, user?.uid, navigate, addNotification, handleFirebaseError, handleAsyncError, normalizeRoomData, updateUserStatus, clearDestruction]);
+  }, [roomId, user?.uid, navigate, addNotification, handleFirebaseError, handleAsyncError, normalizeRoomData, updateUserStatus, clearDestruction, checkForRoomDestruction]);
 
   return {
     room,

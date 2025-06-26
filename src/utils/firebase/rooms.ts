@@ -1,3 +1,4 @@
+
 import { 
   collection, 
   doc, 
@@ -19,6 +20,17 @@ import { db } from './config';
 // Use consistent collection name 'musicRooms' across all room operations
 const ROOMS_COLLECTION = 'musicRooms';
 
+interface RoomData {
+  id: string;
+  name: string;
+  createdAt?: any;
+  lastActivity?: any;
+  participants: any[];
+  participantIds: string[];
+  isActive: boolean;
+  [key: string]: any;
+}
+
 // Save room to Firestore
 export const saveRoomToFirestore = async (roomData: any): Promise<void> => {
   try {
@@ -38,7 +50,7 @@ export const saveRoomToFirestore = async (roomData: any): Promise<void> => {
 
 // Listen to live rooms - simplified query without orderBy to avoid index requirement
 export const listenToLiveRooms = (
-  onRooms: (rooms: any[]) => void,
+  onRooms: (rooms: RoomData[]) => void,
   onError: (error: Error) => void
 ): (() => void) => {
   try {
@@ -57,11 +69,11 @@ export const listenToLiveRooms = (
           return {
             id: doc.id,
             ...data
-          } as any; // Type assertion to fix TypeScript error
+          } as RoomData;
         });
         
         // Sort on client side to avoid index requirement
-        rooms.sort((a: any, b: any) => {
+        rooms.sort((a: RoomData, b: RoomData) => {
           const timeA = a.createdAt?.toDate?.() || new Date(0);
           const timeB = b.createdAt?.toDate?.() || new Date(0);
           return timeB.getTime() - timeA.getTime();
