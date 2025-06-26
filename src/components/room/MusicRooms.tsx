@@ -67,16 +67,17 @@ const MusicRooms = () => {
           const normalizedRooms = liveRooms.map(room => {
             const participants = Array.isArray(room.participants) ? room.participants : [];
             
-            const normalizedRoom = {
+            const normalizedRoom: RoomType = {
               ...room,
-              hostId: room.hostId || room.creatorId || '', // Fix: Include hostId
+              hostId: room.hostId || room.creatorId || '',
               participants,
               pendingRequests: Array.isArray(room.pendingRequests) ? room.pendingRequests : [],
               participantIds: Array.isArray(room.participantIds) ? room.participantIds : [],
               maxParticipants: typeof room.maxParticipants === 'number' ? room.maxParticipants : 3,
               isPublic: typeof room.isPublic === 'boolean' ? room.isPublic : true,
               hostInstrument: room.hostInstrument || 'piano',
-              allowDifferentInstruments: typeof room.allowDifferentInstruments === 'boolean' ? room.allowDifferentInstruments : true
+              allowDifferentInstruments: typeof room.allowDifferentInstruments === 'boolean' ? room.allowDifferentInstruments : true,
+              createdAt: room.createdAt ? (isFirestoreTimestamp(room.createdAt) ? room.createdAt.toDate().toISOString() : typeof room.createdAt === 'string' ? room.createdAt : new Date().toISOString()) : new Date().toISOString()
             };
             
             console.log(`MusicRooms: Room ${room.id} - participants: ${participants.length}/${normalizedRoom.maxParticipants}, isPublic: ${normalizedRoom.isPublic}, hostId: ${normalizedRoom.hostId}`);
@@ -280,11 +281,7 @@ const MusicRooms = () => {
                         )}
                       </div>
                       <div className="text-xs text-muted-foreground">
-                        {isFirestoreTimestamp(room.createdAt)
-                          ? format(room.createdAt.toDate(), 'MMM d, h:mm a')
-                          : typeof room.createdAt === 'string'
-                            ? format(new Date(room.createdAt), 'MMM d, h:mm a')
-                            : 'Date unknown'}
+                        {format(new Date(room.createdAt), 'MMM d, h:mm a')}
                       </div>
                     </div>
 
