@@ -1,12 +1,8 @@
 
 import { useCallback, useEffect, useRef } from 'react';
-import { useInstrumentBroadcast } from './rooms/useInstrumentBroadcast';
-import { useRemoteNotePlayer } from './rooms/useRemoteNotePlayer';
-import { useInstrumentListener } from './rooms/useInstrumentListener';
 import { useParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import ToneAudioEngine from '@/utils/audio/toneAudioEngine';
-import { InstrumentNote } from '@/types/InstrumentNote';
 
 export const useRoomInstruments = (
   room: any, 
@@ -17,17 +13,6 @@ export const useRoomInstruments = (
   const { user } = useAuth();
   
   const audioInitializedRef = useRef<boolean>(false);
-
-  const {
-    remotePlaying,
-    activeNotes,
-    playRemoteNote,
-    setRemotePlayingWithCleanup,
-    mountedRef,
-    echoPreventionRef
-  } = useRemoteNotePlayer(roomId, user?.uid);
-
-  const { broadcastInstrumentNote } = useInstrumentBroadcast(room, setLastActivityTime);
 
   // Initialize Tone.js audio system when component mounts
   useEffect(() => {
@@ -50,45 +35,17 @@ export const useRoomInstruments = (
     initAudio();
   }, []);
 
-  useInstrumentListener(
-    playRemoteNote,
-    setRemotePlayingWithCleanup,
-    updateInstrumentPlayTime,
-    mountedRef
-  );
-
-  // Periodic cleanup of echo prevention cache
-  useEffect(() => {
-    const cleanupInterval = setInterval(() => {
-      if (mountedRef.current && echoPreventionRef.current.size > 100) {
-        console.log('useRoomInstruments: Cleaning echo prevention cache');
-        echoPreventionRef.current.clear();
-      }
-    }, 30000);
-
-    return () => clearInterval(cleanupInterval);
-  }, [mountedRef, echoPreventionRef]);
-
-  // Enhanced broadcast function with audio initialization check
-  const enhancedBroadcastNote = useCallback(async (note: InstrumentNote): Promise<void> => {
-    // Ensure audio is initialized before broadcasting
-    if (!audioInitializedRef.current) {
-      try {
-        const audioEngine = ToneAudioEngine.getInstance();
-        await audioEngine.initialize();
-        audioInitializedRef.current = true;
-      } catch (error) {
-        console.error('useRoomInstruments: Failed to initialize audio before broadcast:', error);
-      }
-    }
-
-    await broadcastInstrumentNote(note);
-  }, [broadcastInstrumentNote]);
+  // Simplified function that just updates activity time
+  const simpleBroadcastNote = useCallback(async (): Promise<void> => {
+    // Just update activity - actual audio sharing happens through system audio
+    setLastActivityTime(Date.now());
+    updateInstrumentPlayTime();
+  }, [setLastActivityTime, updateInstrumentPlayTime]);
 
   return {
-    remotePlaying,
-    broadcastInstrumentNote: enhancedBroadcastNote,
-    activeNotes,
+    remotePlaying: null, // Removed complex remote playing logic
+    broadcastInstrumentNote: simpleBroadcastNote,
+    activeNotes: [],
     audioInitialized: audioInitializedRef.current
   };
 };

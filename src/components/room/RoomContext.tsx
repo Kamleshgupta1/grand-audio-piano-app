@@ -1,14 +1,13 @@
+
 import React, { createContext, useContext, ReactNode } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useNotifications } from '@/hooks/useNotifications';
 import { useRoomData } from '@/hooks/room/useRoomData';
 import { useRoomChat } from '@/hooks/room/useRoomChat';
-import { useRoomInstruments } from '@/hooks/useRoomInstruments';
 import { useParticipantManagement } from '@/hooks/useParticipantManagement';
 import { useRoomJoin } from '@/hooks/useRoomJoin';
 import { useRoomActions } from '@/hooks/useRoomActions';
-import { InstrumentNote } from '@/types/InstrumentNote';
 import {
   sendPrivateMessage,
   getPrivateMessages,
@@ -29,7 +28,6 @@ type RoomContextType = {
   privateMessagingUser: string | null;
   unreadCounts: Record<string, number>;
   unreadMessageCount: number;
-  remotePlaying: InstrumentNote | null;
   sendMessage: (message: string) => Promise<void>;
   leaveRoom: () => Promise<void>;
   closeRoom: () => Promise<void>;
@@ -42,7 +40,6 @@ type RoomContextType = {
   respondToJoinRequest: (userId: string, approve: boolean) => Promise<void>;
   sendPrivateMsg: (receiverId: string, message: string) => Promise<void>;
   setPrivateMessagingUser: (userId: string | null) => void;
-  broadcastInstrumentNote: (note: InstrumentNote) => Promise<void>;
   markChatAsRead: () => void;
   requestJoin: (joinCode?: string) => Promise<void>;
 };
@@ -73,11 +70,6 @@ export const RoomProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     sendMessage,
     markChatAsRead
   } = useRoomChat(roomId, isParticipant, isHost, room);
-
-  const {
-    remotePlaying,
-    broadcastInstrumentNote
-  } = useRoomInstruments(room, setLastActivityTime, updateInstrumentPlayTime);
 
   const {
     leaveRoom,
@@ -191,7 +183,6 @@ export const RoomProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     privateMessagingUser,
     unreadCounts,
     unreadMessageCount,
-    remotePlaying,
     sendMessage,
     leaveRoom,
     closeRoom,
@@ -204,7 +195,6 @@ export const RoomProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     respondToJoinRequest,
     sendPrivateMsg,
     setPrivateMessagingUser,
-    broadcastInstrumentNote,
     markChatAsRead,
     requestJoin
   };
