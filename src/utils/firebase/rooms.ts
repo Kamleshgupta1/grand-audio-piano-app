@@ -1,3 +1,4 @@
+
 import { 
   collection, 
   doc, 
@@ -49,10 +50,14 @@ export const listenToLiveRooms = (
     const unsubscribe = onSnapshot(
       roomsQuery,
       (snapshot) => {
-        const rooms = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
+        const rooms = snapshot.docs.map(doc => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            ...data
+          };
+        });
+        
         // Sort on client side to avoid index requirement
         rooms.sort((a, b) => {
           const timeA = a.createdAt?.toDate?.() || new Date(0);
