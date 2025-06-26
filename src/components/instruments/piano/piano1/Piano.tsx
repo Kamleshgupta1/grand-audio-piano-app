@@ -348,7 +348,6 @@ const PianoPage = () => {
     await new Promise(res => setTimeout(res, 150)); // delay stabilizes layout
     await lockToLandscape();
   });
-  
 };
 
 
