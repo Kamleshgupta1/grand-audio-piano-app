@@ -1,5 +1,3 @@
-
-
 import { 
   collection, 
   doc, 
@@ -18,10 +16,13 @@ import {
 } from 'firebase/firestore';
 import { db } from './config';
 
+// Use consistent collection name 'musicRooms' across all room operations
+const ROOMS_COLLECTION = 'musicRooms';
+
 // Save room to Firestore
 export const saveRoomToFirestore = async (roomData: any): Promise<void> => {
   try {
-    const roomRef = doc(db, 'rooms', roomData.id);
+    const roomRef = doc(db, ROOMS_COLLECTION, roomData.id);
     await setDoc(roomRef, {
       ...roomData,
       isActive: true,
@@ -41,7 +42,7 @@ export const listenToLiveRooms = (
   onError: (error: Error) => void
 ): (() => void) => {
   try {
-    const roomsRef = collection(db, 'rooms');
+    const roomsRef = collection(db, ROOMS_COLLECTION);
     const roomsQuery = query(
       roomsRef,
       where('isActive', '==', true),
@@ -81,40 +82,55 @@ export const listenToLiveRooms = (
   }
 };
 
-// Add user to room - improved version
+// Add user to room - improved version with better error handling
 export const addUserToRoom = async (roomId: string, user: any): Promise<boolean> => {
   try {
-    const roomRef = doc(db, 'rooms', roomId);
+    console.log(`addUserToRoom: Attempting to add user ${user.uid} to room ${roomId}`);
+    
+    const roomRef = doc(db, ROOMS_COLLECTION, roomId);
     const roomDoc = await getDoc(roomRef);
     
     if (!roomDoc.exists()) {
-      console.error('Room does not exist');
+      console.error('addUserToRoom: Room does not exist in collection:', ROOMS_COLLECTION);
       return false;
     }
 
     const roomData = roomDoc.data();
+    console.log('addUserToRoom: Room data retrieved:', roomData.name);
+    
     const participantIds = roomData.participantIds || [];
     const participants = roomData.participants || [];
     
     // Check if user is already a participant
     if (participantIds.includes(user.uid)) {
-      console.log('User is already a participant in the room');
+      console.log('addUserToRoom: User is already a participant in the room');
       return true;
     }
 
     // Check room capacity
-    if (participantIds.length >= (roomData.maxParticipants || 3)) {
-      console.error('Room is at maximum capacity');
+    const maxParticipants = roomData.maxParticipants || 10;
+    if (participantIds.length >= maxParticipants) {
+      console.error('addUserToRoom: Room is at maximum capacity');
       return false;
+    }
+
+    // Check if room is private and user has permission
+    if (!roomData.isPublic && roomData.hostId !== user.uid) {
+      const pendingRequests = roomData.pendingRequests || [];
+      if (!pendingRequests.includes(user.uid) && !user.joinCode) {
+        console.error('addUserToRoom: User does not have permission to join private room');
+        return false;
+      }
     }
 
     const newParticipant = {
       id: user.uid,
       name: user.displayName || user.email || 'Anonymous',
-      instrument: 'piano', // Default instrument
+      instrument: roomData.allowDifferentInstruments ? 'piano' : (roomData.hostInstrument || 'piano'),
       avatar: user.photoURL || '',
-      isHost: false,
+      isHost: roomData.hostId === user.uid,
       status: 'active',
+      muted: false,
       joinedAt: new Date().toISOString(),
       lastSeen: new Date().toISOString(),
       isInRoom: true,
@@ -125,13 +141,15 @@ export const addUserToRoom = async (roomId: string, user: any): Promise<boolean>
     await updateDoc(roomRef, {
       participantIds: arrayUnion(user.uid),
       participants: arrayUnion(newParticipant),
-      lastActivity: serverTimestamp()
+      lastActivity: serverTimestamp(),
+      // Remove from pending requests if they were there
+      pendingRequests: arrayRemove(user.uid)
     });
 
-    console.log('User successfully added to room');
+    console.log('addUserToRoom: User successfully added to room');
     return true;
   } catch (error) {
-    console.error('Error adding user to room:', error);
+    console.error('addUserToRoom: Error adding user to room:', error);
     return false;
   }
 };
@@ -139,7 +157,7 @@ export const addUserToRoom = async (roomId: string, user: any): Promise<boolean>
 // Remove user from room (safe version)
 export const removeUserFromRoomSafe = async (roomId: string, userId: string): Promise<void> => {
   try {
-    const roomRef = doc(db, 'rooms', roomId);
+    const roomRef = doc(db, ROOMS_COLLECTION, roomId);
     const roomDoc = await getDoc(roomRef);
     
     if (!roomDoc.exists()) {
@@ -172,7 +190,7 @@ export const removeUserFromRoom = async (roomId: string, userId: string): Promis
 // Update user instrument (safe version)
 export const updateUserInstrumentSafe = async (roomId: string, userId: string, instrument: string): Promise<void> => {
   try {
-    const roomRef = doc(db, 'rooms', roomId);
+    const roomRef = doc(db, ROOMS_COLLECTION, roomId);
     const roomDoc = await getDoc(roomRef);
     
     if (!roomDoc.exists()) {
@@ -206,7 +224,7 @@ export const updateUserInstrument = async (roomId: string, userId: string, instr
 // Toggle user mute (safe version)
 export const toggleUserMuteSafe = async (roomId: string, userId: string, mute: boolean): Promise<void> => {
   try {
-    const roomRef = doc(db, 'rooms', roomId);
+    const roomRef = doc(db, ROOMS_COLLECTION, roomId);
     const roomDoc = await getDoc(roomRef);
     
     if (!roomDoc.exists()) {
@@ -240,7 +258,7 @@ export const toggleUserMute = async (roomId: string, userId: string, mute: boole
 // Update room settings
 export const updateRoomSettings = async (roomId: string, settings: any): Promise<void> => {
   try {
-    const roomRef = doc(db, 'rooms', roomId);
+    const roomRef = doc(db, ROOMS_COLLECTION, roomId);
     await updateDoc(roomRef, {
       ...settings,
       lastActivity: serverTimestamp()
@@ -278,7 +296,7 @@ export const toggleAutoCloseRoom = async (roomId: string, enabled: boolean, time
 // Handle join request
 export const handleJoinRequest = async (roomId: string, userId: string, approve: boolean): Promise<void> => {
   try {
-    const roomRef = doc(db, 'rooms', roomId);
+    const roomRef = doc(db, ROOMS_COLLECTION, roomId);
     
     if (approve) {
       await updateDoc(roomRef, {
@@ -303,7 +321,7 @@ export const handleJoinRequest = async (roomId: string, userId: string, approve:
 // Delete room from Firestore
 export const deleteRoomFromFirestore = async (roomId: string): Promise<void> => {
   try {
-    const roomRef = doc(db, 'rooms', roomId);
+    const roomRef = doc(db, ROOMS_COLLECTION, roomId);
     await deleteDoc(roomRef);
     console.log('Room deleted successfully');
   } catch (error) {
@@ -319,7 +337,7 @@ export const listenToRoomData = (
   onError: (error: Error) => void
 ): (() => void) => {
   try {
-    const roomRef = doc(db, 'rooms', roomId);
+    const roomRef = doc(db, ROOMS_COLLECTION, roomId);
 
     const unsubscribe = onSnapshot(
       roomRef,
@@ -327,6 +345,7 @@ export const listenToRoomData = (
         if (doc.exists()) {
           onRoom({ id: doc.id, ...doc.data() });
         } else {
+          console.error('listenToRoomData: Room not found in collection:', ROOMS_COLLECTION);
           onError(new Error('Room not found'));
         }
       },
