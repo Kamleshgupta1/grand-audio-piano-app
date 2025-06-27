@@ -1,4 +1,3 @@
-
 import WebRTCSignaling from './webrtcSignaling';
 
 interface AudioPeer {
@@ -90,8 +89,6 @@ class SimplifiedAudioShare {
             autoGainControl: false,
             sampleRate: 44100,
             channelCount: 2,
-            // Enhanced settings for better instrument sound capture
-            latency: 0.01,
             sampleSize: 16,
           },
           video: false
