@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 
 type ThemeMode = 'light' | 'dark' | 'custom';
 
@@ -31,103 +31,133 @@ const ThemeContext = createContext<ThemeContextType>({
   setCustomColors: () => {},
 });
 
-export const useTheme = () => {
-  const context = useContext(ThemeContext);
-  if (!context) {
-    throw new Error('useTheme must be used within a ThemeProvider');
-  }
-  return context;
-};
+export const useTheme = () => useContext(ThemeContext);
 
-interface ThemeProviderProps {
-  children: ReactNode;
-}
-
-export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
+export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [mode, setMode] = useState<ThemeMode>('light');
   const [customColors, setCustomColors] = useState<CustomColors>(defaultCustomColors);
 
   useEffect(() => {
     // Load saved theme from localStorage
-    try {
-      const savedMode = localStorage.getItem('themeMode') as ThemeMode;
-      const savedColors = localStorage.getItem('customColors');
-      
-      if (savedMode && ['light', 'dark', 'custom'].includes(savedMode)) {
-        setMode(savedMode);
+    const savedMode = localStorage.getItem('themeMode') as ThemeMode;
+    const savedColors = localStorage.getItem('customColors');
+    
+    if (savedMode) {
+      setMode(savedMode);
+    }
+    
+    if (savedColors) {
+      try {
+        setCustomColors(JSON.parse(savedColors));
+      } catch (e) {
+        console.error('Failed to parse saved custom colors');
       }
-      
-      if (savedColors) {
-        const parsedColors = JSON.parse(savedColors);
-        setCustomColors(parsedColors);
-      }
-    } catch (error) {
-      console.error('Failed to load theme from localStorage:', error);
     }
   }, []);
 
   useEffect(() => {
     // Save theme preferences
-    try {
-      localStorage.setItem('themeMode', mode);
-      localStorage.setItem('customColors', JSON.stringify(customColors));
-      
-      // Apply theme to document
-      const root = document.documentElement;
-      
-      if (mode === 'dark') {
-        root.classList.add('dark');
-      } else {
-        root.classList.remove('dark');
-      }
-      
-      if (mode === 'custom') {
-        // Apply custom colors
-        root.style.setProperty('--primary', customColors.primary);
-        root.style.setProperty('--secondary', customColors.secondary);
-        root.style.setProperty('--accent', customColors.accent);
-        root.style.setProperty('--background', customColors.background);
+    localStorage.setItem('themeMode', mode);
+    localStorage.setItem('customColors', JSON.stringify(customColors));
+    
+    // Apply theme to document
+    const root = document.documentElement;
+    
+    if (mode === 'dark') {
+      root.classList.add('dark');
+    } else {
+      root.classList.remove('dark');
+    }
+    
+    if (mode === 'custom') {
+      // Convert hex to HSL and apply it for CSS variables
+      const hexToHSL = (hex: string) => {
+        // Remove the # if present
+        hex = hex.replace(/^#/, '');
         
-        document.body.style.backgroundColor = customColors.background;
-        document.body.style.color = getContrastingTextColor(customColors.background);
-      } else {
-        // Clear custom properties
-        root.style.removeProperty('--primary');
-        root.style.removeProperty('--secondary');
-        root.style.removeProperty('--accent');
-        root.style.removeProperty('--background');
+        // Parse the hex values
+        let r = parseInt(hex.slice(0, 2), 16) / 255;
+        let g = parseInt(hex.slice(2, 4), 16) / 255;
+        let b = parseInt(hex.slice(4, 6), 16) / 255;
         
-        document.body.style.backgroundColor = '';
-        document.body.style.color = '';
-      }
-    } catch (error) {
-      console.error('Failed to apply theme:', error);
+        // Find the min and max values to calculate saturation
+        let max = Math.max(r, g, b);
+        let min = Math.min(r, g, b);
+        
+        // Calculate HSL values
+        let h = 0, s = 0, l = (max + min) / 2;
+        
+        if (max !== min) {
+          let d = max - min;
+          s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+          
+          switch (max) {
+            case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+            case g: h = (b - r) / d + 2; break;
+            case b: h = (r - g) / d + 4; break;
+          }
+          
+          h = Math.round(h * 60);
+        }
+        
+        s = Math.round(s * 100);
+        l = Math.round(l * 100);
+        
+        return `${h} ${s}% ${l}%`;
+      };
+      
+      // Apply both direct hex and HSL values for broader compatibility
+      root.style.setProperty('--primary', customColors.primary);
+      root.style.setProperty('--secondary', customColors.secondary);
+      root.style.setProperty('--accent', customColors.accent);
+      root.style.setProperty('--background', customColors.background);
+      
+      // Apply HSL values to CSS variables for shadcn compatibility
+      root.style.setProperty('--primary-hsl', hexToHSL(customColors.primary));
+      root.style.setProperty('--secondary-hsl', hexToHSL(customColors.secondary));
+      root.style.setProperty('--accent-hsl', hexToHSL(customColors.accent));
+      root.style.setProperty('--background-hsl', hexToHSL(customColors.background));
+      
+      // Apply additional color transformations
+      document.body.style.backgroundColor = customColors.background;
+      document.body.style.color = getContrastingTextColor(customColors.background);
+    } else {
+      // Clear custom properties
+      root.style.removeProperty('--primary');
+      root.style.removeProperty('--secondary');
+      root.style.removeProperty('--accent');
+      root.style.removeProperty('--background');
+      root.style.removeProperty('--primary-hsl');
+      root.style.removeProperty('--secondary-hsl');
+      root.style.removeProperty('--accent-hsl');
+      root.style.removeProperty('--background-hsl');
+      
+      // Reset body styles
+      document.body.style.backgroundColor = '';
+      document.body.style.color = '';
     }
   }, [mode, customColors]);
   
-  function getContrastingTextColor(hexColor: string): string {
-    try {
-      const hex = hexColor.replace(/^#/, '');
-      const r = parseInt(hex.slice(0, 2), 16);
-      const g = parseInt(hex.slice(2, 4), 16);
-      const b = parseInt(hex.slice(4, 6), 16);
-      
-      const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-      return luminance > 0.5 ? '#000000' : '#ffffff';
-    } catch (error) {
-      return '#000000';
-    }
+  // Function to determine if text should be white or black based on background color
+  function getContrastingTextColor(hexColor: string) {
+    // Remove the # if present
+    const hex = hexColor.replace(/^#/, '');
+    
+    // Parse the hex values
+    const r = parseInt(hex.slice(0, 2), 16);
+    const g = parseInt(hex.slice(2, 4), 16);
+    const b = parseInt(hex.slice(4, 6), 16);
+    
+    // Calculate relative luminance using the formula
+    // https://www.w3.org/TR/WCAG20/#relativeluminancedef
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    
+    // Return white for dark backgrounds, black for light backgrounds
+    return luminance > 0.5 ? '#000000' : '#ffffff';
   }
 
-  const value = {
-    mode,
-    setMode,
-    customColors,
-    setCustomColors,
-  };
-
   return (
-    <ThemeContext.Provider value={value}>
+    <ThemeContext.Provider value={{ mode, setMode, customColors, setCustomColors }}>
       {children}
     </ThemeContext.Provider>
   );

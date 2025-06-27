@@ -1,4 +1,3 @@
-
 class SystemAudioShare {
   private static instance: SystemAudioShare;
   private localStream: MediaStream | null = null;
@@ -167,26 +166,69 @@ class SystemAudioShare {
     }
   }
 
-  private async createPeerConnection(participantId: string): Promise<void> {
-    try {
-      const pc = new RTCPeerConnection({
-        iceServers: [
-          { urls: 'stun:stun.l.google.com:19302' }
-        ]
-      });
+ private async createPeerConnection(participantId: string): Promise<void> {
+  try {
+    const pc = new RTCPeerConnection({
+      iceServers: [{ urls: 'stun:stun.l.google.com:19302' }],
+    });
 
-      // Add local stream to peer connection
-      if (this.localStream) {
-        this.localStream.getTracks().forEach(track => {
-          pc.addTrack(track, this.localStream!);
-        });
+    // ✅ Handle ICE candidate
+    pc.onicecandidate = (event) => {
+      if (event.candidate) {
+        // Send ICE candidate to the other peer via Firebase/WebSocket signaling
       }
+    };
 
-      this.peerConnections.set(participantId, pc);
-      console.log('SystemAudioShare: Created peer connection for participant:', participantId);
-    } catch (error) {
-      console.error('SystemAudioShare: Failed to create peer connection for participant:', participantId, error);
+    // ✅ Play incoming audio
+    pc.ontrack = (event) => {
+      const remoteStream = new MediaStream();
+      remoteStream.addTrack(event.track);
+      const audio = new Audio();
+      audio.srcObject = remoteStream;
+      audio.autoplay = true;
+      audio.play().catch(console.warn);
+      console.log(`SystemAudioShare: Playing audio from ${participantId}`);
+    };
+
+    // ✅ Send local stream tracks
+    if (this.localStream) {
+      this.localStream.getTracks().forEach((track) => {
+        pc.addTrack(track, this.localStream!);
+      });
     }
+
+    this.peerConnections.set(participantId, pc);
+
+    // ✅ Simulate offer-answer exchange (replace with real signaling backend)
+    const offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
+
+    const answer = await this.fakeSignalExchange(offer); // Simulated exchange
+    await pc.setRemoteDescription(new RTCSessionDescription(answer));
+
+    console.log('SystemAudioShare: Created peer connection and exchanged SDP with', participantId);
+  } catch (error) {
+    console.error('SystemAudioShare: Failed to create peer connection for participant:', participantId, error);
+  }
+}
+
+
+  // Simulate offer/answer exchange (replace with actual signaling backend)
+  private async fakeSignalExchange(offer: RTCSessionDescriptionInit): Promise<RTCSessionDescriptionInit> {
+    const tempPc = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
+
+    let localStream = this.localStream;
+    if (localStream) {
+      localStream.getTracks().forEach((track) => {
+        tempPc.addTrack(track, localStream);
+      });
+    }
+
+    await tempPc.setRemoteDescription(offer);
+    const answer = await tempPc.createAnswer();
+    await tempPc.setLocalDescription(answer);
+
+    return answer;
   }
 
   public getLocalStream(): MediaStream | null {
