@@ -3,7 +3,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useRoom } from './RoomContext';
 import SimpleInstrument from './SimpleInstrument';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle, Volume2, VolumeX, Mic, MicOff, Users } from 'lucide-react';
+import { AlertCircle, Volume2, VolumeX, Mic, MicOff, Users, Activity } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import SimplifiedAudioShare from '@/utils/audio/simplifiedAudioShare';
 
@@ -13,6 +13,7 @@ const RoomInstrument: React.FC = () => {
   const [audioError, setAudioError] = useState<string | null>(null);
   const [userInteracted, setUserInteracted] = useState(false);
   const [connectedPeers, setConnectedPeers] = useState(0);
+  const [audioLevel, setAudioLevel] = useState(0);
   
   const audioShare = SimplifiedAudioShare.getInstance();
 
@@ -20,9 +21,16 @@ const RoomInstrument: React.FC = () => {
   useEffect(() => {
     if (room?.id && userInfo?.id) {
       const initializeAudio = async () => {
-        const initialized = await audioShare.initialize(room.id, userInfo.id);
-        if (!initialized) {
-          setAudioError('Failed to initialize audio system');
+        try {
+          const initialized = await audioShare.initialize(room.id, userInfo.id);
+          if (!initialized) {
+            setAudioError('Failed to initialize audio system');
+          } else {
+            console.log('RoomInstrument: Audio system initialized successfully');
+          }
+        } catch (error) {
+          console.error('RoomInstrument: Audio initialization error:', error);
+          setAudioError('Audio system initialization failed');
         }
       };
       
@@ -30,6 +38,7 @@ const RoomInstrument: React.FC = () => {
     }
 
     return () => {
+      console.log('RoomInstrument: Cleaning up audio share');
       audioShare.dispose();
     };
   }, [room?.id, userInfo?.id]);
@@ -41,15 +50,16 @@ const RoomInstrument: React.FC = () => {
         .filter((p: any) => p.id !== userInfo.id && p.status === 'active')
         .map((p: any) => p.id);
       
+      console.log('RoomInstrument: Updating participants for audio sharing:', participantIds);
       audioShare.updateParticipants(participantIds);
       
-      // Update connected peers count
-      const updatePeerCount = () => {
+      // Update connected peers count and audio level periodically
+      const updateStats = () => {
         setConnectedPeers(audioShare.getConnectedPeersCount());
+        setAudioLevel(audioShare.getActiveAudioLevel());
       };
       
-      // Update peer count every second
-      const interval = setInterval(updatePeerCount, 1000);
+      const interval = setInterval(updateStats, 1000);
       return () => clearInterval(interval);
     }
   }, [room?.participants, userInfo?.id]);
@@ -59,29 +69,34 @@ const RoomInstrument: React.FC = () => {
     if (!userInteracted) {
       setUserInteracted(true);
       setAudioError(null);
+      console.log('RoomInstrument: User interaction detected, audio context enabled');
     }
   }, [userInteracted]);
 
   const handleAudioToggle = useCallback(async () => {
     try {
       if (!isAudioSharing) {
+        console.log('RoomInstrument: Starting audio sharing...');
         const success = await audioShare.startSharing();
         if (success) {
           setIsAudioSharing(true);
           setAudioError(null);
-          console.log('RoomInstrument: Audio sharing enabled');
+          console.log('RoomInstrument: Audio sharing enabled successfully');
         } else {
-          setAudioError('Failed to start audio sharing. Please allow microphone access.');
+          setAudioError('Failed to start audio sharing. Please allow microphone/system audio access.');
+          console.error('RoomInstrument: Audio sharing failed to start');
         }
       } else {
+        console.log('RoomInstrument: Stopping audio sharing...');
         audioShare.stopSharing();
         setIsAudioSharing(false);
         setConnectedPeers(0);
+        setAudioLevel(0);
         console.log('RoomInstrument: Audio sharing disabled');
       }
     } catch (error) {
       console.error('RoomInstrument: Error toggling audio sharing:', error);
-      setAudioError('Audio sharing failed. Please check browser permissions.');
+      setAudioError('Audio sharing failed. Please check browser permissions and try again.');
       setIsAudioSharing(false);
     }
   }, [isAudioSharing, audioShare]);
@@ -89,9 +104,11 @@ const RoomInstrument: React.FC = () => {
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      audioShare.stopSharing();
+      if (isAudioSharing) {
+        audioShare.stopSharing();
+      }
     };
-  }, [audioShare]);
+  }, [audioShare, isAudioSharing]);
   
   if (!room || !userInfo) {
     return (
@@ -131,14 +148,14 @@ const RoomInstrument: React.FC = () => {
 
   return (
     <div className="flex flex-col h-full" onClick={handleUserInteraction}>
-      {/* Audio sharing controls */}
+      {/* Enhanced audio sharing controls */}
       <div className="flex items-center justify-between gap-2 mb-2 text-xs bg-gray-50 dark:bg-gray-800 p-2 rounded-lg">
         <div className="flex items-center gap-2">
           <div className={`flex items-center gap-1 ${isAudioSharing ? 'text-green-600' : 'text-gray-500'}`}>
             <Volume2 className="h-3 w-3" />
             <span>
               {isAudioSharing 
-                ? `Sharing to ${activeParticipants} user(s)` 
+                ? `Sharing audio to ${activeParticipants} user(s)` 
                 : 'Audio Ready'
               }
             </span>
@@ -146,6 +163,12 @@ const RoomInstrument: React.FC = () => {
               <div className="flex items-center gap-1 ml-2">
                 <Users className="h-3 w-3" />
                 <span>{connectedPeers} connected</span>
+              </div>
+            )}
+            {isAudioSharing && audioLevel > 0 && (
+              <div className="flex items-center gap-1 ml-2">
+                <Activity className="h-3 w-3" />
+                <span>Active</span>
               </div>
             )}
           </div>
@@ -174,10 +197,17 @@ const RoomInstrument: React.FC = () => {
       {isAudioSharing && (
         <div className="text-xs text-blue-600 mb-2 flex items-center gap-1 bg-blue-50 dark:bg-blue-900/20 p-2 rounded">
           <Mic className="h-3 w-3" />
-          Your audio is being shared with {activeParticipants} participant(s) - others can hear your instrument sounds
+          Your instrument sounds are being shared with {activeParticipants} participant(s)
           {connectedPeers > 0 && (
-            <span className="ml-1">({connectedPeers} connected)</span>
+            <span className="ml-1 font-semibold">({connectedPeers} actively connected)</span>
           )}
+        </div>
+      )}
+
+      {audioError && userInteracted && (
+        <div className="text-xs text-red-600 mb-2 flex items-center gap-1 bg-red-50 dark:bg-red-900/20 p-2 rounded">
+          <AlertCircle className="h-3 w-3" />
+          {audioError}
         </div>
       )}
 
