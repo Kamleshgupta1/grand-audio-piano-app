@@ -13,9 +13,9 @@ export const useRoomCleanup = (roomId: string | undefined) => {
   const scheduleRoomDestruction = useCallback(async (currentRoom: any) => {
     if (!roomId || !currentRoom) return;
 
-    // Prevent too frequent cleanup checks (minimum 5 seconds between checks)
+    // Prevent too frequent cleanup checks (minimum 10 seconds between checks)
     const now = Date.now();
-    if (now - lastCleanupCheckRef.current < 5000) {
+    if (now - lastCleanupCheckRef.current < 10000) {
       console.log('useRoomCleanup: Skipping cleanup check - too frequent');
       return;
     }
@@ -31,36 +31,37 @@ export const useRoomCleanup = (roomId: string | undefined) => {
     const participants = currentRoom.participants || [];
     const participantIds = currentRoom.participantIds || [];
     
-    // Check for active participants more strictly
+    // Very strict check for active participants
     const activeParticipants = participants.filter((p: any) => {
       if (!p.id || !participantIds.includes(p.id)) return false;
       
-      // Consider participant active if:
-      // 1. Status is active AND isInRoom is not false
-      // 2. Has recent heartbeat (within 2 minutes) OR joined recently (within 1 minute)
-      const isStatusActive = p.status === 'active' && p.isInRoom !== false;
+      // Consider participant active only if:
+      // 1. Status is active AND isInRoom is true
+      // 2. Has recent heartbeat (within 90 seconds) OR joined very recently (within 30 seconds)
+      const isStatusActive = p.status === 'active' && p.isInRoom === true;
       const heartbeatTime = p.heartbeatTimestamp || 0;
       const joinTime = p.joinedAt ? new Date(p.joinedAt).getTime() : 0;
       const currentTime = Date.now();
       
-      const hasRecentHeartbeat = (currentTime - heartbeatTime) < 120000; // 2 minutes
-      const joinedRecently = (currentTime - joinTime) < 60000; // 1 minute
+      const hasRecentHeartbeat = (currentTime - heartbeatTime) < 90000; // 1.5 minutes
+      const joinedVeryRecently = (currentTime - joinTime) < 30000; // 30 seconds
       
-      return isStatusActive && (hasRecentHeartbeat || joinedRecently);
+      return isStatusActive && (hasRecentHeartbeat || joinedVeryRecently);
     });
 
     console.log(`useRoomCleanup: Room ${roomId} cleanup analysis:`);
     console.log(`- Total participants: ${participants.length}`);
     console.log(`- Participant IDs: ${participantIds.length}`);
-    console.log(`- Active participants: ${activeParticipants.length}`);
+    console.log(`- Strictly active participants: ${activeParticipants.length}`);
 
-    // Only destroy if there are truly no active participants
+    // Only destroy if there are absolutely no active participants and no participant IDs
     if (activeParticipants.length === 0 && participantIds.length === 0) {
-      console.log('useRoomCleanup: No active participants detected, scheduling destruction in 10 seconds');
+      console.log('useRoomCleanup: No active participants detected, scheduling destruction in 15 seconds');
       
       destructionTimeoutRef.current = setTimeout(async () => {
         try {
-          console.log('useRoomCleanup: Executing room destruction due to inactivity');
+          // Double-check before destruction
+          console.log('useRoomCleanup: Executing room destruction due to complete inactivity');
           await deleteRoomFromFirestore(roomId);
           navigate('/music-rooms');
           addNotification({
@@ -71,7 +72,7 @@ export const useRoomCleanup = (roomId: string | undefined) => {
         } catch (error) {
           console.error('useRoomCleanup: Error destroying empty room:', error);
         }
-      }, 10000); // 10 seconds delay to allow for reconnections
+      }, 15000); // 15 seconds delay to allow for reconnections
     } else {
       console.log(`useRoomCleanup: Room has ${activeParticipants.length} active participants, not scheduling destruction`);
     }

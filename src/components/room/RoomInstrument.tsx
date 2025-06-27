@@ -3,61 +3,81 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useRoom } from './RoomContext';
 import SimpleInstrument from './SimpleInstrument';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle, Volume2, VolumeX, Mic, MicOff } from 'lucide-react';
+import { AlertCircle, Volume2, VolumeX, Mic, MicOff, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import SystemAudioShare from '@/utils/audio/systemAudioShare';
+import SimplifiedAudioShare from '@/utils/audio/simplifiedAudioShare';
 
 const RoomInstrument: React.FC = () => {
   const { room, userInfo } = useRoom();
   const [isAudioSharing, setIsAudioSharing] = useState(false);
   const [audioError, setAudioError] = useState<string | null>(null);
   const [userInteracted, setUserInteracted] = useState(false);
-  const [audioLevel, setAudioLevel] = useState(0);
+  const [connectedPeers, setConnectedPeers] = useState(0);
   
-  const audioShare = SystemAudioShare.getInstance();
+  const audioShare = SimplifiedAudioShare.getInstance();
 
-  // Update room participants when room changes
+  // Initialize audio sharing when room and user info are available
   useEffect(() => {
-    if (room?.participants) {
+    if (room?.id && userInfo?.id) {
+      const initializeAudio = async () => {
+        const initialized = await audioShare.initialize(room.id, userInfo.id);
+        if (!initialized) {
+          setAudioError('Failed to initialize audio system');
+        }
+      };
+      
+      initializeAudio();
+    }
+
+    return () => {
+      audioShare.dispose();
+    };
+  }, [room?.id, userInfo?.id]);
+
+  // Update participants for audio sharing
+  useEffect(() => {
+    if (room?.participants && userInfo?.id) {
       const participantIds = room.participants
-        .filter((p: any) => p.id !== userInfo?.id && p.status === 'active')
+        .filter((p: any) => p.id !== userInfo.id && p.status === 'active')
         .map((p: any) => p.id);
       
-      audioShare.updateRoomParticipants(participantIds);
-      console.log('RoomInstrument: Updated room participants for audio sharing:', participantIds);
+      audioShare.updateParticipants(participantIds);
+      
+      // Update connected peers count
+      const updatePeerCount = () => {
+        setConnectedPeers(audioShare.getConnectedPeersCount());
+      };
+      
+      // Update peer count every second
+      const interval = setInterval(updatePeerCount, 1000);
+      return () => clearInterval(interval);
     }
-  }, [room?.participants, userInfo?.id, audioShare]);
+  }, [room?.participants, userInfo?.id]);
 
   // Handle user interaction to enable audio context
   const handleUserInteraction = useCallback(async () => {
     if (!userInteracted) {
       setUserInteracted(true);
       setAudioError(null);
-      
-      // Initialize system audio
-      const initialized = await audioShare.initializeSystemAudio();
-      if (!initialized) {
-        setAudioError('Failed to initialize audio system');
-      }
     }
-  }, [userInteracted, audioShare]);
+  }, [userInteracted]);
 
   const handleAudioToggle = useCallback(async () => {
     try {
       if (!isAudioSharing) {
-        const success = await audioShare.startSystemAudioSharing();
+        const success = await audioShare.startSharing();
         if (success) {
           setIsAudioSharing(true);
           setAudioError(null);
-          console.log('RoomInstrument: System audio sharing enabled');
+          console.log('RoomInstrument: Audio sharing enabled');
         } else {
-          setAudioError('Failed to start audio sharing. Please allow microphone/system audio access.');
+          setAudioError('Failed to start audio sharing. Please allow microphone access.');
         }
       } else {
-        audioShare.stopSystemAudioSharing();
+        audioShare.stopSharing();
         setIsAudioSharing(false);
-        setAudioLevel(0);
-        console.log('RoomInstrument: System audio sharing disabled');
+        setConnectedPeers(0);
+        console.log('RoomInstrument: Audio sharing disabled');
       }
     } catch (error) {
       console.error('RoomInstrument: Error toggling audio sharing:', error);
@@ -66,22 +86,10 @@ const RoomInstrument: React.FC = () => {
     }
   }, [isAudioSharing, audioShare]);
 
-  // Monitor audio level when sharing
-  useEffect(() => {
-    if (!isAudioSharing) return;
-
-    const interval = setInterval(() => {
-      const level = audioShare.getAudioLevel();
-      setAudioLevel(level);
-    }, 100);
-
-    return () => clearInterval(interval);
-  }, [isAudioSharing, audioShare]);
-
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      audioShare.stopSystemAudioSharing();
+      audioShare.stopSharing();
     };
   }, [audioShare]);
   
@@ -128,15 +136,16 @@ const RoomInstrument: React.FC = () => {
         <div className="flex items-center gap-2">
           <div className={`flex items-center gap-1 ${isAudioSharing ? 'text-green-600' : 'text-gray-500'}`}>
             <Volume2 className="h-3 w-3" />
-            <span>{isAudioSharing ? `Sharing to ${activeParticipants} user(s)` : 'Audio Ready'}</span>
-            {isAudioSharing && (
+            <span>
+              {isAudioSharing 
+                ? `Sharing to ${activeParticipants} user(s)` 
+                : 'Audio Ready'
+              }
+            </span>
+            {isAudioSharing && connectedPeers > 0 && (
               <div className="flex items-center gap-1 ml-2">
-                <div className="h-2 w-8 bg-gray-200 rounded-full overflow-hidden">
-                  <div 
-                    className="h-full bg-green-500 transition-all duration-100"
-                    style={{ width: `${Math.min(audioLevel * 100, 100)}%` }}
-                  />
-                </div>
+                <Users className="h-3 w-3" />
+                <span>{connectedPeers} connected</span>
               </div>
             )}
           </div>
@@ -166,6 +175,9 @@ const RoomInstrument: React.FC = () => {
         <div className="text-xs text-blue-600 mb-2 flex items-center gap-1 bg-blue-50 dark:bg-blue-900/20 p-2 rounded">
           <Mic className="h-3 w-3" />
           Your audio is being shared with {activeParticipants} participant(s) - others can hear your instrument sounds
+          {connectedPeers > 0 && (
+            <span className="ml-1">({connectedPeers} connected)</span>
+          )}
         </div>
       )}
 
