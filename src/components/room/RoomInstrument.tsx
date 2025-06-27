@@ -3,7 +3,7 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useRoom } from './RoomContext';
 import SimpleInstrument from './SimpleInstrument';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle, Volume2, VolumeX, Mic, MicOff, Users, Activity } from 'lucide-react';
+import { AlertCircle, Volume2, VolumeX, Mic, MicOff, Users, Activity, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import SimplifiedAudioShare from '@/utils/audio/simplifiedAudioShare';
 
@@ -14,6 +14,7 @@ const RoomInstrument: React.FC = () => {
   const [userInteracted, setUserInteracted] = useState(false);
   const [connectedPeers, setConnectedPeers] = useState(0);
   const [audioLevel, setAudioLevel] = useState(0);
+  const [needsAudioResume, setNeedsAudioResume] = useState(false);
   
   const audioShare = SimplifiedAudioShare.getInstance();
 
@@ -69,6 +70,11 @@ const RoomInstrument: React.FC = () => {
     if (!userInteracted) {
       setUserInteracted(true);
       setAudioError(null);
+      setNeedsAudioResume(false);
+      
+      // Resume audio playback for all peers
+      audioShare.resumeAudio();
+      
       console.log('RoomInstrument: User interaction detected, audio context enabled');
     }
   }, [userInteracted]);
@@ -81,6 +87,7 @@ const RoomInstrument: React.FC = () => {
         if (success) {
           setIsAudioSharing(true);
           setAudioError(null);
+          setNeedsAudioResume(true); // May need user gesture for audio playback
           console.log('RoomInstrument: Audio sharing enabled successfully');
         } else {
           setAudioError('Failed to start audio sharing. Please allow microphone/system audio access.');
@@ -92,6 +99,7 @@ const RoomInstrument: React.FC = () => {
         setIsAudioSharing(false);
         setConnectedPeers(0);
         setAudioLevel(0);
+        setNeedsAudioResume(false);
         console.log('RoomInstrument: Audio sharing disabled');
       }
     } catch (error) {
@@ -100,6 +108,12 @@ const RoomInstrument: React.FC = () => {
       setIsAudioSharing(false);
     }
   }, [isAudioSharing, audioShare]);
+
+  const handleResumeAudio = useCallback(() => {
+    audioShare.resumeAudio();
+    setNeedsAudioResume(false);
+    handleUserInteraction();
+  }, [handleUserInteraction]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -174,24 +188,38 @@ const RoomInstrument: React.FC = () => {
           </div>
         </div>
         
-        <Button
-          onClick={handleAudioToggle}
-          variant="ghost"
-          size="sm"
-          className="h-6 px-2 text-xs"
-        >
-          {isAudioSharing ? (
-            <>
-              <Mic className="h-3 w-3 mr-1" />
-              Stop Sharing
-            </>
-          ) : (
-            <>
-              <MicOff className="h-3 w-3 mr-1" />
-              Share Audio
-            </>
+        <div className="flex items-center gap-2">
+          {needsAudioResume && (
+            <Button
+              onClick={handleResumeAudio}
+              variant="outline"
+              size="sm"
+              className="h-6 px-2 text-xs"
+            >
+              <Play className="h-3 w-3 mr-1" />
+              Enable Audio
+            </Button>
           )}
-        </Button>
+          
+          <Button
+            onClick={handleAudioToggle}
+            variant="ghost"
+            size="sm"
+            className="h-6 px-2 text-xs"
+          >
+            {isAudioSharing ? (
+              <>
+                <Mic className="h-3 w-3 mr-1" />
+                Stop Sharing
+              </>
+            ) : (
+              <>
+                <MicOff className="h-3 w-3 mr-1" />
+                Share Audio
+              </>
+            )}
+          </Button>
+        </div>
       </div>
 
       {isAudioSharing && (
@@ -201,6 +229,13 @@ const RoomInstrument: React.FC = () => {
           {connectedPeers > 0 && (
             <span className="ml-1 font-semibold">({connectedPeers} actively connected)</span>
           )}
+        </div>
+      )}
+
+      {needsAudioResume && isAudioSharing && (
+        <div className="text-xs text-yellow-600 mb-2 flex items-center gap-1 bg-yellow-50 dark:bg-yellow-900/20 p-2 rounded">
+          <Play className="h-3 w-3" />
+          Click "Enable Audio" to hear other participants' instruments
         </div>
       )}
 

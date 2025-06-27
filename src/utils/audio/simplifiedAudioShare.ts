@@ -6,6 +6,8 @@ interface AudioPeer {
   connection: RTCPeerConnection;
   audio?: HTMLAudioElement;
   connected: boolean;
+  queuedIceCandidates: RTCIceCandidate[];
+  remoteDescriptionSet: boolean;
 }
 
 class SimplifiedAudioShare {
@@ -17,6 +19,8 @@ class SimplifiedAudioShare {
   private userId: string = '';
   private isSharing = false;
   private audioContext: AudioContext | null = null;
+  private currentParticipants: string[] = [];
+  private userInteracted = false;
 
   private constructor() {}
 
@@ -81,6 +85,13 @@ class SimplifiedAudioShare {
         if (this.localStream && this.localStream.getAudioTracks().length > 0) {
           console.log('SimplifiedAudioShare: System audio capture enabled');
           this.isSharing = true;
+          
+          // Automatically connect to existing participants after sharing starts
+          if (this.currentParticipants.length > 0) {
+            console.log('SimplifiedAudioShare: Auto-connecting to existing participants:', this.currentParticipants);
+            this.connectToAllParticipants();
+          }
+          
           return true;
         }
       } catch (displayError) {
@@ -104,6 +115,13 @@ class SimplifiedAudioShare {
         if (this.localStream) {
           console.log('SimplifiedAudioShare: Microphone audio sharing started');
           this.isSharing = true;
+          
+          // Automatically connect to existing participants after sharing starts
+          if (this.currentParticipants.length > 0) {
+            console.log('SimplifiedAudioShare: Auto-connecting to existing participants:', this.currentParticipants);
+            this.connectToAllParticipants();
+          }
+          
           return true;
         }
       } catch (micError) {
@@ -115,6 +133,15 @@ class SimplifiedAudioShare {
       console.error('SimplifiedAudioShare: Failed to start sharing:', error);
       return false;
     }
+  }
+
+  private connectToAllParticipants(): void {
+    this.currentParticipants.forEach(participantId => {
+      if (participantId !== this.userId && !this.peers.has(participantId)) {
+        console.log('SimplifiedAudioShare: Auto-connecting to participant:', participantId);
+        this.connectToPeer(participantId);
+      }
+    });
   }
 
   async connectToPeer(peerId: string): Promise<void> {
@@ -137,7 +164,18 @@ class SimplifiedAudioShare {
         ]
       });
 
-      // Add local stream tracks
+      // Initialize peer with ICE candidate queue
+      const peer: AudioPeer = {
+        id: peerId,
+        connection: pc,
+        connected: false,
+        queuedIceCandidates: [],
+        remoteDescriptionSet: false
+      };
+
+      this.peers.set(peerId, peer);
+
+      // Add local stream tracks - only for the initiator
       this.localStream.getTracks().forEach(track => {
         console.log('SimplifiedAudioShare: Adding track to peer connection:', track.kind, track.label);
         pc.addTrack(track, this.localStream!);
@@ -153,10 +191,7 @@ class SimplifiedAudioShare {
       // Handle connection state changes
       pc.onconnectionstatechange = () => {
         console.log(`SimplifiedAudioShare: Connection state with ${peerId}:`, pc.connectionState);
-        const peer = this.peers.get(peerId);
-        if (peer) {
-          peer.connected = pc.connectionState === 'connected';
-        }
+        peer.connected = pc.connectionState === 'connected';
       };
 
       // Handle ICE connection state
@@ -164,29 +199,20 @@ class SimplifiedAudioShare {
         console.log(`SimplifiedAudioShare: ICE connection state with ${peerId}:`, pc.iceConnectionState);
         if (pc.iceConnectionState === 'connected' || pc.iceConnectionState === 'completed') {
           console.log(`SimplifiedAudioShare: Successfully connected to ${peerId}`);
-          const peer = this.peers.get(peerId);
-          if (peer) {
-            peer.connected = true;
-          }
+          peer.connected = true;
         } else if (pc.iceConnectionState === 'failed' || pc.iceConnectionState === 'disconnected') {
           console.log(`SimplifiedAudioShare: Connection failed/disconnected with ${peerId}`);
-          const peer = this.peers.get(peerId);
-          if (peer) {
-            peer.connected = false;
-          }
+          peer.connected = false;
         }
       };
 
-      // Handle ICE candidates
+      // Handle ICE candidates - queue them until remote description is set
       pc.onicecandidate = (event) => {
         if (event.candidate && this.signaling) {
           console.log('SimplifiedAudioShare: Sending ICE candidate to', peerId);
           this.signaling.sendSignal('ice-candidate', event.candidate, peerId);
         }
       };
-
-      // Store peer connection
-      this.peers.set(peerId, { id: peerId, connection: pc, connected: false });
 
       // Create and send offer
       const offer = await pc.createOffer({
@@ -216,22 +242,61 @@ class SimplifiedAudioShare {
           const answerPeer = this.peers.get(signal.from);
           if (answerPeer) {
             await answerPeer.connection.setRemoteDescription(signal.data);
+            answerPeer.remoteDescriptionSet = true;
             console.log('SimplifiedAudioShare: Set remote description for answer from', signal.from);
+            
+            // Process queued ICE candidates
+            this.processQueuedIceCandidates(signal.from);
           }
           break;
         case 'ice-candidate':
-          const icePeer = this.peers.get(signal.from);
-          if (icePeer && icePeer.connection.remoteDescription) {
-            await icePeer.connection.addIceCandidate(signal.data);
-            console.log('SimplifiedAudioShare: Added ICE candidate from', signal.from);
-          } else {
-            console.log('SimplifiedAudioShare: Queuing ICE candidate from', signal.from, '(no remote description yet)');
-          }
+          await this.handleIceCandidate(signal.from, signal.data);
           break;
       }
     } catch (error) {
       console.error('SimplifiedAudioShare: Error handling signaling message:', error);
     }
+  }
+
+  private async handleIceCandidate(fromPeerId: string, candidate: RTCIceCandidate): Promise<void> {
+    const peer = this.peers.get(fromPeerId);
+    if (!peer) {
+      console.log('SimplifiedAudioShare: No peer found for ICE candidate from', fromPeerId);
+      return;
+    }
+
+    // Queue ICE candidate if remote description is not set yet
+    if (!peer.remoteDescriptionSet) {
+      console.log('SimplifiedAudioShare: Queuing ICE candidate from', fromPeerId, '(no remote description yet)');
+      peer.queuedIceCandidates.push(candidate);
+      return;
+    }
+
+    // Add ICE candidate immediately if remote description is set
+    try {
+      await peer.connection.addIceCandidate(candidate);
+      console.log('SimplifiedAudioShare: Added ICE candidate from', fromPeerId);
+    } catch (error) {
+      console.error('SimplifiedAudioShare: Error adding ICE candidate:', error);
+    }
+  }
+
+  private async processQueuedIceCandidates(peerId: string): Promise<void> {
+    const peer = this.peers.get(peerId);
+    if (!peer || peer.queuedIceCandidates.length === 0) return;
+
+    console.log(`SimplifiedAudioShare: Processing ${peer.queuedIceCandidates.length} queued ICE candidates for ${peerId}`);
+    
+    for (const candidate of peer.queuedIceCandidates) {
+      try {
+        await peer.connection.addIceCandidate(candidate);
+        console.log('SimplifiedAudioShare: Added queued ICE candidate from', peerId);
+      } catch (error) {
+        console.error('SimplifiedAudioShare: Error adding queued ICE candidate:', error);
+      }
+    }
+    
+    peer.queuedIceCandidates = [];
   }
 
   private async handleOffer(fromPeerId: string, offer: RTCSessionDescriptionInit): Promise<void> {
@@ -250,7 +315,18 @@ class SimplifiedAudioShare {
         ]
       });
 
-      // Add local stream tracks
+      // Initialize peer with ICE candidate queue
+      const peer: AudioPeer = {
+        id: fromPeerId,
+        connection: pc,
+        connected: false,
+        queuedIceCandidates: [],
+        remoteDescriptionSet: false
+      };
+
+      this.peers.set(fromPeerId, peer);
+
+      // Add local stream tracks for bidirectional audio
       this.localStream.getTracks().forEach(track => {
         console.log('SimplifiedAudioShare: Adding track for answer:', track.kind);
         pc.addTrack(track, this.localStream!);
@@ -266,25 +342,16 @@ class SimplifiedAudioShare {
       // Handle connection state changes
       pc.onconnectionstatechange = () => {
         console.log(`SimplifiedAudioShare: Connection state with ${fromPeerId}:`, pc.connectionState);
-        const peer = this.peers.get(fromPeerId);
-        if (peer) {
-          peer.connected = pc.connectionState === 'connected';
-        }
+        peer.connected = pc.connectionState === 'connected';
       };
 
       // Handle ICE connection state
       pc.oniceconnectionstatechange = () => {
         console.log(`SimplifiedAudioShare: ICE connection state with ${fromPeerId}:`, pc.iceConnectionState);
         if (pc.iceConnectionState === 'connected' || pc.iceConnectionState === 'completed') {
-          const peer = this.peers.get(fromPeerId);
-          if (peer) {
-            peer.connected = true;
-          }
+          peer.connected = true;
         } else if (pc.iceConnectionState === 'failed' || pc.iceConnectionState === 'disconnected') {
-          const peer = this.peers.get(fromPeerId);
-          if (peer) {
-            peer.connected = false;
-          }
+          peer.connected = false;
         }
       };
 
@@ -296,11 +363,13 @@ class SimplifiedAudioShare {
         }
       };
 
-      // Store peer connection
-      this.peers.set(fromPeerId, { id: fromPeerId, connection: pc, connected: false });
-
       // Set remote description and create answer
       await pc.setRemoteDescription(offer);
+      peer.remoteDescriptionSet = true;
+      
+      // Process any queued ICE candidates
+      this.processQueuedIceCandidates(fromPeerId);
+      
       const answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
 
@@ -316,13 +385,14 @@ class SimplifiedAudioShare {
     try {
       console.log('SimplifiedAudioShare: Setting up remote audio for', peerId);
       
-      // Remove existing audio element if any
+      // Clean up existing audio element if any
       const existingPeer = this.peers.get(peerId);
       if (existingPeer?.audio) {
+        console.log('SimplifiedAudioShare: Cleaning up existing audio element for', peerId);
         existingPeer.audio.pause();
         existingPeer.audio.srcObject = null;
         existingPeer.audio.remove();
-        console.log('SimplifiedAudioShare: Removed existing audio element for', peerId);
+        existingPeer.audio = undefined;
       }
 
       // Create new audio element
@@ -331,52 +401,79 @@ class SimplifiedAudioShare {
       audio.autoplay = true;
       audio.volume = 0.8;
       audio.muted = false;
+      audio.id = `remote-audio-${peerId}`;
       
       // Add to DOM for better browser compatibility
       audio.style.display = 'none';
       document.body.appendChild(audio);
       
-      // Handle audio play promise
-      const playPromise = audio.play();
-      if (playPromise !== undefined) {
-        playPromise.then(() => {
-          console.log('SimplifiedAudioShare: Successfully playing audio from peer', peerId);
-        }).catch(error => {
-          console.error('SimplifiedAudioShare: Error playing remote audio:', error);
-          // Auto-retry on user interaction
-          const retryPlay = () => {
-            audio.play().then(() => {
-              console.log('SimplifiedAudioShare: Retry successful for peer', peerId);
-              document.removeEventListener('click', retryPlay);
-              document.removeEventListener('keydown', retryPlay);
-            }).catch(e => console.error('Retry failed:', e));
-          };
-          document.addEventListener('click', retryPlay, { once: true });
-          document.addEventListener('keydown', retryPlay, { once: true });
-        });
-      }
-
       // Store audio element with peer
       const peer = this.peers.get(peerId);
       if (peer) {
         peer.audio = audio;
         console.log('SimplifiedAudioShare: Audio element attached to peer', peerId);
       }
+
+      // Handle audio play with user gesture support
+      this.playRemoteAudio(audio, peerId);
+      
     } catch (error) {
       console.error('SimplifiedAudioShare: Error setting up remote audio:', error);
     }
   }
 
-  updateParticipants(participantIds: string[]): void {
-    console.log('SimplifiedAudioShare: Updating participants:', participantIds);
+  private async playRemoteAudio(audio: HTMLAudioElement, peerId: string): Promise<void> {
+    try {
+      await audio.play();
+      console.log('SimplifiedAudioShare: Successfully playing audio from peer', peerId);
+    } catch (error) {
+      console.error('SimplifiedAudioShare: Error playing remote audio:', error);
+      
+      // If autoplay fails, wait for user interaction
+      if (!this.userInteracted) {
+        console.log('SimplifiedAudioShare: Waiting for user interaction to enable audio playback');
+        const enableAudio = async () => {
+          try {
+            await audio.play();
+            console.log('SimplifiedAudioShare: Audio playback enabled after user interaction for', peerId);
+            this.userInteracted = true;
+            document.removeEventListener('click', enableAudio);
+            document.removeEventListener('keydown', enableAudio);
+          } catch (e) {
+            console.error('SimplifiedAudioShare: Failed to enable audio after user interaction:', e);
+          }
+        };
+        
+        document.addEventListener('click', enableAudio, { once: true });
+        document.addEventListener('keydown', enableAudio, { once: true });
+      }
+    }
+  }
+
+  public resumeAudio(): void {
+    console.log('SimplifiedAudioShare: Resuming audio for all peers');
+    this.userInteracted = true;
     
-    // Connect to new participants
-    participantIds.forEach(participantId => {
-      if (participantId !== this.userId && !this.peers.has(participantId)) {
-        console.log('SimplifiedAudioShare: Connecting to new participant:', participantId);
-        this.connectToPeer(participantId);
+    this.peers.forEach((peer, peerId) => {
+      if (peer.audio) {
+        this.playRemoteAudio(peer.audio, peerId);
       }
     });
+  }
+
+  updateParticipants(participantIds: string[]): void {
+    console.log('SimplifiedAudioShare: Updating participants:', participantIds);
+    this.currentParticipants = [...participantIds];
+    
+    // Connect to new participants if sharing is active
+    if (this.isSharing) {
+      participantIds.forEach(participantId => {
+        if (participantId !== this.userId && !this.peers.has(participantId)) {
+          console.log('SimplifiedAudioShare: Connecting to new participant:', participantId);
+          this.connectToPeer(participantId);
+        }
+      });
+    }
 
     // Remove disconnected participants
     this.peers.forEach((peer, peerId) => {
