@@ -21,12 +21,38 @@ class WebRTCSignaling {
     this.userId = userId;
   }
 
+  private serializeIceCandidate(candidate: RTCIceCandidate): any {
+    return {
+      candidate: candidate.candidate,
+      sdpMLineIndex: candidate.sdpMLineIndex,
+      sdpMid: candidate.sdpMid,
+      usernameFragment: candidate.usernameFragment
+    };
+  }
+
+  private deserializeIceCandidate(data: any): RTCIceCandidate {
+    return new RTCIceCandidate({
+      candidate: data.candidate,
+      sdpMLineIndex: data.sdpMLineIndex,
+      sdpMid: data.sdpMid,
+      usernameFragment: data.usernameFragment
+    });
+  }
+
   async sendSignal(type: 'offer' | 'answer' | 'ice-candidate', data: any, targetUserId: string) {
     try {
       const signalRef = collection(db, 'webrtc-signals');
+      
+      // Serialize RTCIceCandidate objects for Firebase
+      let serializedData = data;
+      if (type === 'ice-candidate' && data instanceof RTCIceCandidate) {
+        serializedData = this.serializeIceCandidate(data);
+        console.log('WebRTC: Serialized ICE candidate:', serializedData);
+      }
+      
       await addDoc(signalRef, {
         type,
-        data,
+        data: serializedData,
         from: this.userId,
         to: targetUserId,
         roomId: this.roomId,
@@ -35,6 +61,7 @@ class WebRTCSignaling {
       console.log(`WebRTC: Sent ${type} to ${targetUserId}`);
     } catch (error) {
       console.error('WebRTC: Error sending signal:', error);
+      throw error;
     }
   }
 
@@ -50,6 +77,13 @@ class WebRTCSignaling {
       snapshot.docChanges().forEach(async (change) => {
         if (change.type === 'added') {
           const signal = change.doc.data() as SignalingMessage;
+          
+          // Deserialize ICE candidates
+          if (signal.type === 'ice-candidate') {
+            signal.data = this.deserializeIceCandidate(signal.data);
+            console.log('WebRTC: Deserialized ICE candidate:', signal.data);
+          }
+          
           onSignal(signal);
           
           // Clean up the signal after processing
