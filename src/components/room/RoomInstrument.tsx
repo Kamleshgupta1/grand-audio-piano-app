@@ -53,7 +53,7 @@ const RoomInstrument: React.FC = () => {
       console.log('RoomInstrument: Updating participants for audio sharing:', participantIds);
       audioShare.updateParticipants(participantIds);
       
-      // Update connected peers count and audio level periodically
+      // Update stats periodically
       const updateStats = () => {
         setConnectedPeers(audioShare.getConnectedPeersCount());
         setAudioLevel(audioShare.getActiveAudioLevel());
@@ -148,7 +148,7 @@ const RoomInstrument: React.FC = () => {
 
   return (
     <div className="flex flex-col h-full" onClick={handleUserInteraction}>
-      {/* Enhanced audio sharing controls */}
+      {/* Audio sharing controls */}
       <div className="flex items-center justify-between gap-2 mb-2 text-xs bg-gray-50 dark:bg-gray-800 p-2 rounded-lg">
         <div className="flex items-center gap-2">
           <div className={`flex items-center gap-1 ${isAudioSharing ? 'text-green-600' : 'text-gray-500'}`}>
