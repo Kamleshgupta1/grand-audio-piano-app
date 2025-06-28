@@ -1,7 +1,7 @@
-
 import React, { useEffect, useState, useCallback } from 'react';
 import { useRoom } from './RoomContext';
 import SimpleInstrument from './SimpleInstrument';
+import AudioQualityControls from './AudioQualityControls';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle, Volume2, VolumeX, Mic, MicOff, Users, Activity, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -124,6 +124,19 @@ const RoomInstrument: React.FC = () => {
     };
   }, [audioShare, isAudioSharing]);
   
+  const handleAudioQualityChange = useCallback((settings: {
+    noiseGateThreshold?: number;
+    compressorThreshold?: number;
+    highPassFreq?: number;
+    lowPassFreq?: number;
+  }) => {
+    console.log('RoomInstrument: Updating audio quality settings:', settings);
+    // The audioProcessor will be updated through the SimplifiedAudioShare instance
+    if ((audioShare as any).audioProcessor) {
+      (audioShare as any).audioProcessor.adjustSettings(settings);
+    }
+  }, [audioShare]);
+
   if (!room || !userInfo) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -169,7 +182,7 @@ const RoomInstrument: React.FC = () => {
             <Volume2 className="h-3 w-3" />
             <span>
               {isAudioSharing 
-                ? `Sharing audio to ${activeParticipants} user(s)` 
+                ? `Enhanced Audio to ${activeParticipants} user(s)` 
                 : 'Audio Ready'
               }
             </span>
@@ -189,6 +202,10 @@ const RoomInstrument: React.FC = () => {
         </div>
         
         <div className="flex items-center gap-2">
+          {isAudioSharing && (
+            <AudioQualityControls onSettingsChange={handleAudioQualityChange} />
+          )}
+          
           {needsAudioResume && (
             <Button
               onClick={handleResumeAudio}
@@ -225,7 +242,7 @@ const RoomInstrument: React.FC = () => {
       {isAudioSharing && (
         <div className="text-xs text-blue-600 mb-2 flex items-center gap-1 bg-blue-50 dark:bg-blue-900/20 p-2 rounded">
           <Mic className="h-3 w-3" />
-          Your instrument sounds are being shared with {activeParticipants} participant(s)
+          Enhanced instrument audio with noise reduction is being shared with {activeParticipants} participant(s)
           {connectedPeers > 0 && (
             <span className="ml-1 font-semibold">({connectedPeers} actively connected)</span>
           )}
