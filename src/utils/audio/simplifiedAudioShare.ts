@@ -1,5 +1,5 @@
+
 import WebRTCSignaling from './webrtcSignaling';
-import { AudioProcessor } from './audioProcessor';
 
 interface AudioPeer {
   id: string;
@@ -13,8 +13,6 @@ interface AudioPeer {
 class SimplifiedAudioShare {
   private static instance: SimplifiedAudioShare;
   private localStream: MediaStream | null = null;
-  private processedStream: MediaStream | null = null;
-  private audioProcessor: AudioProcessor | null = null;
   private peers: Map<string, AudioPeer> = new Map();
   private signaling: WebRTCSignaling | null = null;
   private roomId: string = '';
@@ -23,7 +21,6 @@ class SimplifiedAudioShare {
   private audioContext: AudioContext | null = null;
   private currentParticipants: string[] = [];
   private userInteracted = false;
-  private cleanupCallbacks: (() => void)[] = [];
 
   private constructor() {}
 
@@ -61,7 +58,7 @@ class SimplifiedAudioShare {
         return true;
       }
 
-      console.log('SimplifiedAudioShare: Starting enhanced audio sharing...');
+      console.log('SimplifiedAudioShare: Starting audio sharing...');
 
       // Initialize audio context
       this.audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
@@ -71,17 +68,14 @@ class SimplifiedAudioShare {
         console.log('SimplifiedAudioShare: Audio context resumed');
       }
 
-      // Initialize audio processor
-      this.audioProcessor = new AudioProcessor(this.audioContext);
-
       // Try to get system audio first (screen share with audio)
       try {
-        console.log('SimplifiedAudioShare: Requesting system audio with noise suppression...');
+        console.log('SimplifiedAudioShare: Requesting system audio...');
         this.localStream = await navigator.mediaDevices.getDisplayMedia({
           audio: {
-            echoCancellation: true,
-            noiseSuppression: true,
-            autoGainControl: true,
+            echoCancellation: false,
+            noiseSuppression: false,
+            autoGainControl: false,
             sampleRate: 44100,
             channelCount: 2
           },
@@ -89,11 +83,10 @@ class SimplifiedAudioShare {
         });
 
         if (this.localStream && this.localStream.getAudioTracks().length > 0) {
-          console.log('SimplifiedAudioShare: Processing system audio for noise reduction...');
-          this.processedStream = await this.audioProcessor.processStream(this.localStream);
+          console.log('SimplifiedAudioShare: System audio capture enabled');
           this.isSharing = true;
           
-          // Auto-connect to existing participants
+          // Automatically connect to existing participants after sharing starts
           if (this.currentParticipants.length > 0) {
             console.log('SimplifiedAudioShare: Auto-connecting to existing participants:', this.currentParticipants);
             this.connectToAllParticipants();
@@ -105,14 +98,14 @@ class SimplifiedAudioShare {
         console.log('SimplifiedAudioShare: System audio not available, trying microphone...', displayError.message);
       }
 
-      // Fallback to microphone with enhanced processing
+      // Fallback to microphone
       try {
-        console.log('SimplifiedAudioShare: Requesting microphone with noise suppression...');
+        console.log('SimplifiedAudioShare: Requesting microphone audio...');
         this.localStream = await navigator.mediaDevices.getUserMedia({
           audio: {
-            echoCancellation: true,
-            noiseSuppression: true,
-            autoGainControl: true,
+            echoCancellation: false,
+            noiseSuppression: false,
+            autoGainControl: false,
             sampleRate: 44100,
             channelCount: 2
           },
@@ -120,11 +113,10 @@ class SimplifiedAudioShare {
         });
 
         if (this.localStream) {
-          console.log('SimplifiedAudioShare: Processing microphone audio...');
-          this.processedStream = await this.audioProcessor.processStream(this.localStream);
+          console.log('SimplifiedAudioShare: Microphone audio sharing started');
           this.isSharing = true;
           
-          // Auto-connect to existing participants
+          // Automatically connect to existing participants after sharing starts
           if (this.currentParticipants.length > 0) {
             console.log('SimplifiedAudioShare: Auto-connecting to existing participants:', this.currentParticipants);
             this.connectToAllParticipants();
@@ -153,10 +145,10 @@ class SimplifiedAudioShare {
   }
 
   async connectToPeer(peerId: string): Promise<void> {
-    if (this.peers.has(peerId) || !this.processedStream || !this.signaling) {
+    if (this.peers.has(peerId) || !this.localStream || !this.signaling) {
       console.log('SimplifiedAudioShare: Skip connecting to peer', peerId, {
         alreadyExists: this.peers.has(peerId),
-        hasStream: !!this.processedStream,
+        hasStream: !!this.localStream,
         hasSignaling: !!this.signaling
       });
       return;
@@ -183,10 +175,10 @@ class SimplifiedAudioShare {
 
       this.peers.set(peerId, peer);
 
-      // Add processed stream tracks
-      this.processedStream.getTracks().forEach(track => {
-        console.log('SimplifiedAudioShare: Adding processed track to peer connection:', track.kind, track.label);
-        pc.addTrack(track, this.processedStream!);
+      // Add local stream tracks - only for the initiator
+      this.localStream.getTracks().forEach(track => {
+        console.log('SimplifiedAudioShare: Adding track to peer connection:', track.kind, track.label);
+        pc.addTrack(track, this.localStream!);
       });
 
       // Handle incoming audio tracks
@@ -334,10 +326,10 @@ class SimplifiedAudioShare {
 
       this.peers.set(fromPeerId, peer);
 
-      // Add processed stream tracks for bidirectional audio
-      this.processedStream.getTracks().forEach(track => {
-        console.log('SimplifiedAudioShare: Adding processed track for answer:', track.kind);
-        pc.addTrack(track, this.processedStream!);
+      // Add local stream tracks for bidirectional audio
+      this.localStream.getTracks().forEach(track => {
+        console.log('SimplifiedAudioShare: Adding track for answer:', track.kind);
+        pc.addTrack(track, this.localStream!);
       });
 
       // Handle incoming audio tracks
@@ -516,18 +508,6 @@ class SimplifiedAudioShare {
       this.localStream = null;
     }
 
-    if (this.processedStream) {
-      this.processedStream.getTracks().forEach(track => {
-        track.stop();
-      });
-      this.processedStream = null;
-    }
-
-    if (this.audioProcessor) {
-      this.audioProcessor.dispose();
-      this.audioProcessor = null;
-    }
-
     this.peers.forEach((peer, peerId) => {
       this.disconnectPeer(peerId);
     });
@@ -546,10 +526,6 @@ class SimplifiedAudioShare {
       this.audioContext.close();
       this.audioContext = null;
     }
-    
-    // Run cleanup callbacks
-    this.cleanupCallbacks.forEach(callback => callback());
-    this.cleanupCallbacks = [];
   }
 
   isCurrentlySharing(): boolean {
