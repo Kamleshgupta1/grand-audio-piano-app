@@ -6,6 +6,8 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle, Volume2, VolumeX, Mic, MicOff, Users, Activity, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import SimplifiedAudioShare from '@/utils/audio/simplifiedAudioShare';
+import AudioQualityControls from './AudioQualityControls';
+import type { AudioProcessorConfig } from '@/utils/audio/audioProcessor';
 
 const RoomInstrument: React.FC = () => {
   const { room, userInfo } = useRoom();
@@ -15,6 +17,7 @@ const RoomInstrument: React.FC = () => {
   const [connectedPeers, setConnectedPeers] = useState(0);
   const [audioLevel, setAudioLevel] = useState(0);
   const [needsAudioResume, setNeedsAudioResume] = useState(false);
+  const [audioConfig, setAudioConfig] = useState<AudioProcessorConfig | null>(null);
   
   const audioShare = SimplifiedAudioShare.getInstance();
 
@@ -58,6 +61,12 @@ const RoomInstrument: React.FC = () => {
       const updateStats = () => {
         setConnectedPeers(audioShare.getConnectedPeersCount());
         setAudioLevel(audioShare.getActiveAudioLevel());
+        
+        // Update audio config
+        const config = audioShare.getAudioProcessorConfig();
+        if (config) {
+          setAudioConfig(config);
+        }
       };
       
       const interval = setInterval(updateStats, 1000);
@@ -120,6 +129,14 @@ const RoomInstrument: React.FC = () => {
       setAudioError('Failed to resume audio. Please try again.');
     }
   }, [handleUserInteraction, audioShare]);
+
+  const handleAudioConfigChange = useCallback((config: Partial<AudioProcessorConfig>) => {
+    audioShare.updateAudioProcessorConfig(config);
+    const updatedConfig = audioShare.getAudioProcessorConfig();
+    if (updatedConfig) {
+      setAudioConfig(updatedConfig);
+    }
+  }, [audioShare]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -205,6 +222,13 @@ const RoomInstrument: React.FC = () => {
               <Play className="h-3 w-3 mr-1" />
               Enable Audio
             </Button>
+          )}
+          
+          {audioConfig && (
+            <AudioQualityControls
+              config={audioConfig}
+              onConfigChange={handleAudioConfigChange}
+            />
           )}
           
           <Button

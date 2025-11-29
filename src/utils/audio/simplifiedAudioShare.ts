@@ -1,5 +1,6 @@
 
 import WebRTCSignaling from './webrtcSignaling';
+import AudioProcessor, { AudioProcessorConfig } from './audioProcessor';
 
 interface AudioPeer {
   id: string;
@@ -21,6 +22,7 @@ class SimplifiedAudioShare {
   private audioContext: AudioContext | null = null;
   private currentParticipants: string[] = [];
   private userInteracted = false;
+  private audioProcessor: AudioProcessor | null = null;
 
   private constructor() {}
 
@@ -68,6 +70,11 @@ class SimplifiedAudioShare {
         console.log('SimplifiedAudioShare: Audio context resumed');
       }
 
+      // Initialize audio processor
+      this.audioProcessor = new AudioProcessor(this.audioContext);
+      await this.audioProcessor.initialize();
+      console.log('SimplifiedAudioShare: Audio processor initialized');
+
       // Try to get system audio first (screen share with audio)
       try {
         console.log('SimplifiedAudioShare: Requesting system audio...');
@@ -84,6 +91,17 @@ class SimplifiedAudioShare {
 
         if (this.localStream && this.localStream.getAudioTracks().length > 0) {
           console.log('SimplifiedAudioShare: System audio capture enabled');
+          
+          // Process audio through noise suppression pipeline
+          if (this.audioProcessor) {
+            try {
+              this.localStream = await this.audioProcessor.processStream(this.localStream);
+              console.log('SimplifiedAudioShare: Audio processing pipeline active');
+            } catch (error) {
+              console.warn('SimplifiedAudioShare: Audio processing failed, using raw stream:', error);
+            }
+          }
+          
           this.isSharing = true;
           
           // Automatically connect to existing participants after sharing starts
@@ -114,6 +132,17 @@ class SimplifiedAudioShare {
 
         if (this.localStream) {
           console.log('SimplifiedAudioShare: Microphone audio sharing started');
+          
+          // Process audio through noise suppression pipeline
+          if (this.audioProcessor) {
+            try {
+              this.localStream = await this.audioProcessor.processStream(this.localStream);
+              console.log('SimplifiedAudioShare: Audio processing pipeline active');
+            } catch (error) {
+              console.warn('SimplifiedAudioShare: Audio processing failed, using raw stream:', error);
+            }
+          }
+          
           this.isSharing = true;
           
           // Automatically connect to existing participants after sharing starts
@@ -559,6 +588,17 @@ class SimplifiedAudioShare {
     this.isSharing = false;
   }
 
+  updateAudioProcessorConfig(config: Partial<AudioProcessorConfig>): void {
+    if (this.audioProcessor) {
+      this.audioProcessor.updateConfig(config);
+      console.log('SimplifiedAudioShare: Audio processor config updated');
+    }
+  }
+
+  getAudioProcessorConfig(): AudioProcessorConfig | null {
+    return this.audioProcessor ? this.audioProcessor.getConfig() : null;
+  }
+
   dispose(): void {
     console.log('SimplifiedAudioShare: Disposing');
     this.stopSharing();
@@ -576,6 +616,12 @@ class SimplifiedAudioShare {
     if (this.signaling) {
       this.signaling.cleanup();
       this.signaling = null;
+    }
+    
+    // Dispose audio processor
+    if (this.audioProcessor) {
+      this.audioProcessor.dispose();
+      this.audioProcessor = null;
     }
     
     // Close audio context

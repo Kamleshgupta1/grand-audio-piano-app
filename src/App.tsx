@@ -112,8 +112,8 @@ function App() {
         <ThemeProvider>
           <TooltipProvider>
             <Toaster />
-            <ErrorBoundary>
-              <BrowserRouter>
+            <BrowserRouter>
+              <ErrorBoundary>
                 {/* <AdvancedSEO /> */}
                 <Suspense fallback={<LoadingFallback />}>
                   <Routes>
@@ -189,8 +189,8 @@ function App() {
                 </Suspense>
                 <InstallPrompt />
                 <Toaster />
-              </BrowserRouter>
-            </ErrorBoundary>
+              </ErrorBoundary>
+            </BrowserRouter>
           </TooltipProvider>
         </ThemeProvider>
       </QueryClientProvider>
