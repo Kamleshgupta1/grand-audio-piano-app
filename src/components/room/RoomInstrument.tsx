@@ -109,11 +109,17 @@ const RoomInstrument: React.FC = () => {
     }
   }, [isAudioSharing, audioShare]);
 
-  const handleResumeAudio = useCallback(() => {
-    audioShare.resumeAudio();
-    setNeedsAudioResume(false);
-    handleUserInteraction();
-  }, [handleUserInteraction]);
+  const handleResumeAudio = useCallback(async () => {
+    try {
+      await audioShare.resumeAudio();
+      setNeedsAudioResume(false);
+      handleUserInteraction();
+      console.log('RoomInstrument: Audio resumed successfully');
+    } catch (error) {
+      console.error('RoomInstrument: Failed to resume audio:', error);
+      setAudioError('Failed to resume audio. Please try again.');
+    }
+  }, [handleUserInteraction, audioShare]);
 
   // Cleanup on unmount
   useEffect(() => {

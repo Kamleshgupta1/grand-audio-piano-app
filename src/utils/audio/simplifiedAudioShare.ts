@@ -395,6 +395,13 @@ class SimplifiedAudioShare {
         existingPeer.audio = undefined;
       }
 
+      // Remove any orphaned audio elements with same peer ID
+      const orphanedAudio = document.getElementById(`remote-audio-${peerId}`);
+      if (orphanedAudio) {
+        console.log('SimplifiedAudioShare: Removing orphaned audio element for', peerId);
+        orphanedAudio.remove();
+      }
+
       // Create new audio element
       const audio = new Audio();
       audio.srcObject = stream;
@@ -424,23 +431,32 @@ class SimplifiedAudioShare {
 
   private async playRemoteAudio(audio: HTMLAudioElement, peerId: string): Promise<void> {
     try {
+      // Ensure audio context is resumed if needed
+      if (this.audioContext && this.audioContext.state === 'suspended') {
+        await this.audioContext.resume();
+        console.log('SimplifiedAudioShare: Resumed audio context for playback');
+      }
+      
       await audio.play();
       console.log('SimplifiedAudioShare: Successfully playing audio from peer', peerId);
-    } catch (error) {
-      console.error('SimplifiedAudioShare: Error playing remote audio:', error);
+    } catch (error: any) {
+      console.error('SimplifiedAudioShare: Error playing remote audio:', error.message);
       
       // If autoplay fails, wait for user interaction
       if (!this.userInteracted) {
         console.log('SimplifiedAudioShare: Waiting for user interaction to enable audio playback');
         const enableAudio = async () => {
           try {
+            if (this.audioContext && this.audioContext.state === 'suspended') {
+              await this.audioContext.resume();
+            }
             await audio.play();
             console.log('SimplifiedAudioShare: Audio playback enabled after user interaction for', peerId);
             this.userInteracted = true;
             document.removeEventListener('click', enableAudio);
             document.removeEventListener('keydown', enableAudio);
-          } catch (e) {
-            console.error('SimplifiedAudioShare: Failed to enable audio after user interaction:', e);
+          } catch (e: any) {
+            console.error('SimplifiedAudioShare: Failed to enable audio after user interaction:', e.message);
           }
         };
         
@@ -450,15 +466,30 @@ class SimplifiedAudioShare {
     }
   }
 
-  public resumeAudio(): void {
-    console.log('SimplifiedAudioShare: Resuming audio for all peers');
+  public async resumeAudio(): Promise<void> {
+    console.log('SimplifiedAudioShare: Resuming audio for all peers (user gesture)');
     this.userInteracted = true;
     
+    // Resume audio context if suspended
+    if (this.audioContext && this.audioContext.state === 'suspended') {
+      try {
+        await this.audioContext.resume();
+        console.log('SimplifiedAudioShare: Audio context resumed successfully');
+      } catch (error) {
+        console.error('SimplifiedAudioShare: Failed to resume audio context:', error);
+      }
+    }
+    
+    // Attempt to play all peer audio elements
+    const playPromises: Promise<void>[] = [];
     this.peers.forEach((peer, peerId) => {
       if (peer.audio) {
-        this.playRemoteAudio(peer.audio, peerId);
+        playPromises.push(this.playRemoteAudio(peer.audio, peerId));
       }
     });
+    
+    await Promise.allSettled(playPromises);
+    console.log('SimplifiedAudioShare: Resumed audio for', playPromises.length, 'peers');
   }
 
   updateParticipants(participantIds: string[]): void {
@@ -487,14 +518,27 @@ class SimplifiedAudioShare {
   private disconnectPeer(peerId: string): void {
     const peer = this.peers.get(peerId);
     if (peer) {
+      // Close peer connection
       peer.connection.close();
+      
+      // Clean up audio element
       if (peer.audio) {
         peer.audio.pause();
         peer.audio.srcObject = null;
         peer.audio.remove();
+        peer.audio = undefined;
       }
+      
+      // Remove from peers map
       this.peers.delete(peerId);
       console.log('SimplifiedAudioShare: Disconnected from peer', peerId);
+    }
+    
+    // Also remove any orphaned audio elements
+    const orphanedAudio = document.getElementById(`remote-audio-${peerId}`);
+    if (orphanedAudio) {
+      console.log('SimplifiedAudioShare: Removing orphaned audio element during disconnect:', peerId);
+      orphanedAudio.remove();
     }
   }
 
@@ -518,14 +562,33 @@ class SimplifiedAudioShare {
   dispose(): void {
     console.log('SimplifiedAudioShare: Disposing');
     this.stopSharing();
+    
+    // Clean up all audio elements
+    this.peers.forEach((peer, peerId) => {
+      if (peer.audio) {
+        peer.audio.pause();
+        peer.audio.srcObject = null;
+        peer.audio.remove();
+      }
+    });
+    
+    // Clean up signaling
     if (this.signaling) {
       this.signaling.cleanup();
       this.signaling = null;
     }
+    
+    // Close audio context
     if (this.audioContext && this.audioContext.state !== 'closed') {
       this.audioContext.close();
       this.audioContext = null;
     }
+    
+    // Reset state
+    this.peers.clear();
+    this.currentParticipants = [];
+    this.userInteracted = false;
+    console.log('SimplifiedAudioShare: Disposal complete');
   }
 
   isCurrentlySharing(): boolean {

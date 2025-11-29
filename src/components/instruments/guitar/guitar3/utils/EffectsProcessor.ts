@@ -53,7 +53,9 @@ export const createDistortion = (
   distortionAmount: number
 ): WaveShaperNode => {
   const distortion = audioContext.createWaveShaper();
-  distortion.curve = makeDistortionCurve(distortionAmount);
+  const curve = makeDistortionCurve(distortionAmount);
+  // TypeScript type compatibility workaround
+  distortion.curve = curve as any;
   distortion.oversample = '4x';
   
   return distortion;
@@ -70,7 +72,7 @@ export const makeDistortionCurve = (amount = 20): Float32Array => {
     curve[i] = ((3 + k) * x * 20 * deg) / (Math.PI + k * Math.abs(x));
   }
   
-  return curve;
+  return curve as Float32Array;
 };
 
 export const connectWithReverb = (
