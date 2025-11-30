@@ -4,11 +4,19 @@ import AudioProcessor, { AudioProcessorConfig } from './audioProcessor';
 
 interface AudioPeer {
   id: string;
+  name: string;
   connection: RTCPeerConnection;
   audio?: HTMLAudioElement;
   connected: boolean;
   queuedIceCandidates: RTCIceCandidate[];
   remoteDescriptionSet: boolean;
+  muted: boolean;
+  connectionAttempts: number;
+  lastConnectionAttempt: number;
+  reconnectTimeout?: NodeJS.Timeout;
+  audioAnalyser?: AnalyserNode;
+  audioLevel: number;
+  latency?: number;
 }
 
 class SimplifiedAudioShare {
@@ -21,8 +29,13 @@ class SimplifiedAudioShare {
   private isSharing = false;
   private audioContext: AudioContext | null = null;
   private currentParticipants: string[] = [];
+  private participantNames: Map<string, string> = new Map();
   private userInteracted = false;
   private audioProcessor: AudioProcessor | null = null;
+  private maxReconnectAttempts = 5;
+  private reconnectDelay = 2000;
+  private connectionTimeout = 30000;
+  private statusUpdateInterval?: NodeJS.Timeout;
 
   private constructor() {}
 
@@ -46,11 +59,38 @@ class SimplifiedAudioShare {
         this.handleSignalingMessage(signal);
       });
 
+      // Start periodic status updates
+      this.startStatusUpdates();
+
       return true;
     } catch (error) {
       console.error('SimplifiedAudioShare: Initialization failed:', error);
       return false;
     }
+  }
+
+  private startStatusUpdates(): void {
+    if (this.statusUpdateInterval) {
+      clearInterval(this.statusUpdateInterval);
+    }
+    
+    this.statusUpdateInterval = setInterval(() => {
+      this.updatePeerStatuses();
+    }, 1000);
+  }
+
+  private updatePeerStatuses(): void {
+    this.peers.forEach((peer) => {
+      // Update audio level
+      if (peer.audioAnalyser && peer.connected && !peer.muted) {
+        const dataArray = new Uint8Array(peer.audioAnalyser.frequencyBinCount);
+        peer.audioAnalyser.getByteFrequencyData(dataArray);
+        const average = dataArray.reduce((a, b) => a + b, 0) / dataArray.length;
+        peer.audioLevel = Math.min(average / 128, 1);
+      } else {
+        peer.audioLevel = 0;
+      }
+    });
   }
 
   async startSharing(): Promise<boolean> {
@@ -173,6 +213,40 @@ class SimplifiedAudioShare {
     });
   }
 
+  private scheduleReconnect(peerId: string): void {
+    const peer = this.peers.get(peerId);
+    if (!peer) return;
+
+    // Clear existing reconnect timeout
+    if (peer.reconnectTimeout) {
+      clearTimeout(peer.reconnectTimeout);
+    }
+
+    // Check if we should attempt reconnection
+    if (peer.connectionAttempts >= this.maxReconnectAttempts) {
+      console.error(`SimplifiedAudioShare: Max reconnection attempts reached for ${peerId}`);
+      return;
+    }
+
+    // Calculate delay with exponential backoff
+    const delay = this.reconnectDelay * Math.pow(2, peer.connectionAttempts);
+    console.log(`SimplifiedAudioShare: Scheduling reconnection for ${peerId} in ${delay}ms (attempt ${peer.connectionAttempts + 1})`);
+
+    peer.reconnectTimeout = setTimeout(() => {
+      console.log(`SimplifiedAudioShare: Attempting to reconnect to ${peerId}`);
+      this.disconnectPeer(peerId);
+      this.connectToPeer(peerId);
+    }, delay);
+  }
+
+  private handleConnectionTimeout(peerId: string): void {
+    console.error(`SimplifiedAudioShare: Connection timeout for ${peerId}`);
+    const peer = this.peers.get(peerId);
+    if (peer && !peer.connected) {
+      this.scheduleReconnect(peerId);
+    }
+  }
+
   async connectToPeer(peerId: string): Promise<void> {
     if (this.peers.has(peerId) || !this.localStream || !this.signaling) {
       console.log('SimplifiedAudioShare: Skip connecting to peer', peerId, {
@@ -193,14 +267,27 @@ class SimplifiedAudioShare {
         ]
       });
 
-      // Initialize peer with ICE candidate queue
+      // Initialize peer with ICE candidate queue and tracking
       const peer: AudioPeer = {
         id: peerId,
+        name: this.participantNames.get(peerId) || peerId.substring(0, 8),
         connection: pc,
         connected: false,
         queuedIceCandidates: [],
-        remoteDescriptionSet: false
+        remoteDescriptionSet: false,
+        muted: false,
+        connectionAttempts: 1,
+        lastConnectionAttempt: Date.now(),
+        audioLevel: 0
       };
+
+      // Set connection timeout
+      const timeoutId = setTimeout(() => {
+        if (!peer.connected) {
+          console.warn(`SimplifiedAudioShare: Connection timeout for peer ${peerId}`);
+          this.handleConnectionTimeout(peerId);
+        }
+      }, this.connectionTimeout);
 
       this.peers.set(peerId, peer);
 
@@ -221,6 +308,15 @@ class SimplifiedAudioShare {
       pc.onconnectionstatechange = () => {
         console.log(`SimplifiedAudioShare: Connection state with ${peerId}:`, pc.connectionState);
         peer.connected = pc.connectionState === 'connected';
+        
+        if (pc.connectionState === 'connected') {
+          clearTimeout(timeoutId);
+          peer.connectionAttempts = 0;
+          if (peer.reconnectTimeout) {
+            clearTimeout(peer.reconnectTimeout);
+            peer.reconnectTimeout = undefined;
+          }
+        }
       };
 
       // Handle ICE connection state
@@ -229,9 +325,14 @@ class SimplifiedAudioShare {
         if (pc.iceConnectionState === 'connected' || pc.iceConnectionState === 'completed') {
           console.log(`SimplifiedAudioShare: Successfully connected to ${peerId}`);
           peer.connected = true;
-        } else if (pc.iceConnectionState === 'failed' || pc.iceConnectionState === 'disconnected') {
-          console.log(`SimplifiedAudioShare: Connection failed/disconnected with ${peerId}`);
+        } else if (pc.iceConnectionState === 'failed') {
+          console.error(`SimplifiedAudioShare: Connection failed with ${peerId}, attempting reconnection`);
           peer.connected = false;
+          this.scheduleReconnect(peerId);
+        } else if (pc.iceConnectionState === 'disconnected') {
+          console.log(`SimplifiedAudioShare: Connection disconnected with ${peerId}`);
+          peer.connected = false;
+          this.scheduleReconnect(peerId);
         }
       };
 
@@ -347,10 +448,15 @@ class SimplifiedAudioShare {
       // Initialize peer with ICE candidate queue
       const peer: AudioPeer = {
         id: fromPeerId,
+        name: this.participantNames.get(fromPeerId) || fromPeerId.substring(0, 8),
         connection: pc,
         connected: false,
         queuedIceCandidates: [],
-        remoteDescriptionSet: false
+        remoteDescriptionSet: false,
+        muted: false,
+        connectionAttempts: 1,
+        lastConnectionAttempt: Date.now(),
+        audioLevel: 0
       };
 
       this.peers.set(fromPeerId, peer);
@@ -447,6 +553,21 @@ class SimplifiedAudioShare {
       const peer = this.peers.get(peerId);
       if (peer) {
         peer.audio = audio;
+        
+        // Setup audio analyser for level detection
+        if (this.audioContext) {
+          try {
+            const source = this.audioContext.createMediaStreamSource(stream);
+            const analyser = this.audioContext.createAnalyser();
+            analyser.fftSize = 256;
+            source.connect(analyser);
+            peer.audioAnalyser = analyser;
+            console.log('SimplifiedAudioShare: Audio analyser setup for', peerId);
+          } catch (error) {
+            console.warn('SimplifiedAudioShare: Could not setup audio analyser:', error);
+          }
+        }
+        
         console.log('SimplifiedAudioShare: Audio element attached to peer', peerId);
       }
 
@@ -521,9 +642,14 @@ class SimplifiedAudioShare {
     console.log('SimplifiedAudioShare: Resumed audio for', playPromises.length, 'peers');
   }
 
-  updateParticipants(participantIds: string[]): void {
+  updateParticipants(participantIds: string[], participantNames?: Map<string, string>): void {
     console.log('SimplifiedAudioShare: Updating participants:', participantIds);
     this.currentParticipants = [...participantIds];
+    
+    // Update participant names if provided
+    if (participantNames) {
+      this.participantNames = new Map(participantNames);
+    }
     
     // Connect to new participants if sharing is active
     if (this.isSharing) {
@@ -547,6 +673,11 @@ class SimplifiedAudioShare {
   private disconnectPeer(peerId: string): void {
     const peer = this.peers.get(peerId);
     if (peer) {
+      // Clear any reconnect timeout
+      if (peer.reconnectTimeout) {
+        clearTimeout(peer.reconnectTimeout);
+      }
+      
       // Close peer connection
       peer.connection.close();
       
@@ -601,6 +732,13 @@ class SimplifiedAudioShare {
 
   dispose(): void {
     console.log('SimplifiedAudioShare: Disposing');
+    
+    // Stop status updates
+    if (this.statusUpdateInterval) {
+      clearInterval(this.statusUpdateInterval);
+      this.statusUpdateInterval = undefined;
+    }
+    
     this.stopSharing();
     
     // Clean up all audio elements
@@ -609,6 +747,9 @@ class SimplifiedAudioShare {
         peer.audio.pause();
         peer.audio.srcObject = null;
         peer.audio.remove();
+      }
+      if (peer.reconnectTimeout) {
+        clearTimeout(peer.reconnectTimeout);
       }
     });
     
@@ -633,8 +774,40 @@ class SimplifiedAudioShare {
     // Reset state
     this.peers.clear();
     this.currentParticipants = [];
+    this.participantNames.clear();
     this.userInteracted = false;
     console.log('SimplifiedAudioShare: Disposal complete');
+  }
+
+  mutePeer(peerId: string): void {
+    const peer = this.peers.get(peerId);
+    if (peer && peer.audio) {
+      peer.muted = !peer.muted;
+      peer.audio.muted = peer.muted;
+      console.log(`SimplifiedAudioShare: ${peer.muted ? 'Muted' : 'Unmuted'} peer ${peerId}`);
+    }
+  }
+
+  getPeerStatuses(): Array<{
+    id: string;
+    name: string;
+    connected: boolean;
+    connectionState: RTCPeerConnectionState;
+    iceConnectionState: RTCIceConnectionState;
+    audioLevel: number;
+    muted: boolean;
+    latency?: number;
+  }> {
+    return Array.from(this.peers.entries()).map(([id, peer]) => ({
+      id,
+      name: peer.name,
+      connected: peer.connected,
+      connectionState: peer.connection.connectionState,
+      iceConnectionState: peer.connection.iceConnectionState,
+      audioLevel: peer.audioLevel,
+      muted: peer.muted,
+      latency: peer.latency
+    }));
   }
 
   isCurrentlySharing(): boolean {

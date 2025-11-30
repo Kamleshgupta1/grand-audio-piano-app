@@ -1,5 +1,5 @@
 import { db } from '@/utils/firebase/config';
-import { collection, doc, addDoc, onSnapshot, updateDoc, deleteDoc, query, where } from 'firebase/firestore';
+import { collection, doc, addDoc, onSnapshot, deleteDoc, query, where, getDocs } from 'firebase/firestore';
 
 interface SignalingMessage {
   type: 'offer' | 'answer' | 'ice-candidate';
@@ -9,6 +9,7 @@ interface SignalingMessage {
   roomId: string;
   timestamp: number;
   signalId?: string;
+  ttl?: number;
 }
 
 class WebRTCSignaling {
@@ -16,10 +17,14 @@ class WebRTCSignaling {
   private userId: string;
   private unsubscribes: (() => void)[] = [];
   private processedSignals: Set<string> = new Set();
+  private cleanupInterval?: NodeJS.Timeout;
+  private readonly SIGNAL_TTL = 60000; // 1 minute TTL for signals
+  private readonly CLEANUP_INTERVAL = 30000; // Clean up every 30 seconds
 
   constructor(roomId: string, userId: string) {
     this.roomId = roomId;
     this.userId = userId;
+    this.startCleanupTask();
   }
 
   private serializeIceCandidate(candidate: RTCIceCandidate): any {
@@ -44,6 +49,41 @@ class WebRTCSignaling {
     return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   }
 
+  private startCleanupTask(): void {
+    // Start periodic cleanup of old signals
+    this.cleanupInterval = setInterval(() => {
+      this.cleanupOldSignals();
+    }, this.CLEANUP_INTERVAL);
+  }
+
+  private async cleanupOldSignals(): Promise<void> {
+    try {
+      const signalRef = collection(db, 'webrtc-signals');
+      const cutoffTime = Date.now() - this.SIGNAL_TTL;
+      
+      // Query for old signals in this room
+      const q = query(
+        signalRef,
+        where('roomId', '==', this.roomId),
+        where('timestamp', '<', cutoffTime)
+      );
+
+      const snapshot = await getDocs(q);
+      const deletePromises: Promise<void>[] = [];
+      
+      snapshot.forEach((doc) => {
+        deletePromises.push(deleteDoc(doc.ref));
+      });
+
+      if (deletePromises.length > 0) {
+        await Promise.all(deletePromises);
+        console.log(`WebRTC: Cleaned up ${deletePromises.length} old signals`);
+      }
+    } catch (error) {
+      console.error('WebRTC: Error cleaning up old signals:', error);
+    }
+  }
+
   async sendSignal(type: 'offer' | 'answer' | 'ice-candidate', data: any, targetUserId: string) {
     try {
       const signalRef = collection(db, 'webrtc-signals');
@@ -65,7 +105,8 @@ class WebRTCSignaling {
         to: targetUserId,
         roomId: this.roomId,
         timestamp: Date.now(),
-        signalId
+        signalId,
+        ttl: this.SIGNAL_TTL
       });
       console.log(`WebRTC: Sent ${type} to ${targetUserId} with ID ${signalId}`);
     } catch (error) {
@@ -130,6 +171,13 @@ class WebRTCSignaling {
 
   cleanup() {
     console.log('WebRTC: Cleaning up signaling');
+    
+    // Stop cleanup task
+    if (this.cleanupInterval) {
+      clearInterval(this.cleanupInterval);
+      this.cleanupInterval = undefined;
+    }
+    
     this.unsubscribes.forEach(unsubscribe => unsubscribe());
     this.unsubscribes = [];
     this.processedSignals.clear();
