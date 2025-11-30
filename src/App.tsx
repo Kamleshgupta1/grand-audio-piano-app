@@ -5,7 +5,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { OnboardingTutorial } from "@/components/onboarding/OnboardingTutorial";
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useState } from "react";
+import React from 'react';
 import MusicRooms from "./components/room/MusicRooms.tsx";
 import Blog from './components/blog/Blog.tsx';
 import RoomTemplates from './components/room/RoomTemplates';
@@ -92,20 +93,20 @@ if ('serviceWorker' in navigator) {
   });
 }
 
-// Create a QueryClient with optimized settings
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      gcTime: 1000 * 60 * 5, // 5 minutes - replaces deprecated 'cacheTime'
-      staleTime: 1000 * 60 * 2, // 2 minutes
-      retry: 1,
-    },
-  },
-});
-
 import ErrorBoundary from '@/components/ErrorBoundary';
 
 function App() {
+  // Create QueryClient inside component to avoid context issues
+  const [queryClient] = React.useState(() => new QueryClient({
+    defaultOptions: {
+      queries: {
+        gcTime: 1000 * 60 * 5, // 5 minutes
+        staleTime: 1000 * 60 * 2, // 2 minutes
+        retry: 1,
+      },
+    },
+  }));
+
   return (
     <HelmetProvider>
       <QueryClientProvider client={queryClient}>
