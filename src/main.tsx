@@ -1,4 +1,4 @@
-
+import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
@@ -17,18 +17,16 @@ if (!rootElement) throw new Error('Failed to find the root element');
 
 const root = createRoot(rootElement);
 
-// Render the app with StrictMode disabled in production for better performance
-if (import.meta.env.DEV) {
-  import('react').then(({ StrictMode }) => {
-    root.render(
-      <StrictMode>
-        <App />
-      </StrictMode>
-    );
-  });
-} else {
-  root.render(<App />);
-}
+// Render the app with StrictMode in development only
+root.render(
+  import.meta.env.DEV ? (
+    <StrictMode>
+      <App />
+    </StrictMode>
+  ) : (
+    <App />
+  )
+);
 
 // Report web vitals only in development
 if (import.meta.env.DEV) {
