@@ -5,8 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { OnboardingTutorial } from "@/components/onboarding/OnboardingTutorial";
-import { lazy, Suspense, useState } from "react";
-import React from 'react';
+import React, { lazy, Suspense, useState } from "react";
 import MusicRooms from "./components/room/MusicRooms.tsx";
 import Blog from './components/blog/Blog.tsx';
 import RoomTemplates from './components/room/RoomTemplates';
@@ -97,7 +96,7 @@ import ErrorBoundary from '@/components/ErrorBoundary';
 
 function App() {
   // Create QueryClient inside component to avoid context issues
-  const [queryClient] = React.useState(() => new QueryClient({
+  const [queryClient] = useState(() => new QueryClient({
     defaultOptions: {
       queries: {
         gcTime: 1000 * 60 * 5, // 5 minutes
