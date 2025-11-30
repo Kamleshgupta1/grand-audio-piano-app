@@ -3,11 +3,14 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { useRoom } from './RoomContext';
 import SimpleInstrument from './SimpleInstrument';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle, Volume2, VolumeX, Mic, MicOff, Users, Activity, Play } from 'lucide-react';
+import { AlertCircle, Volume2, VolumeX, Mic, MicOff, Users, Activity, Play, ChevronDown, ChevronUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import SimplifiedAudioShare from '@/utils/audio/simplifiedAudioShare';
 import AudioQualityControls from './AudioQualityControls';
+import PeerConnectionStatus from './PeerConnectionStatus';
 import type { AudioProcessorConfig } from '@/utils/audio/audioProcessor';
+import type { PeerStatus } from './PeerConnectionStatus';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 const RoomInstrument: React.FC = () => {
   const { room, userInfo } = useRoom();
@@ -18,6 +21,9 @@ const RoomInstrument: React.FC = () => {
   const [audioLevel, setAudioLevel] = useState(0);
   const [needsAudioResume, setNeedsAudioResume] = useState(false);
   const [audioConfig, setAudioConfig] = useState<AudioProcessorConfig | null>(null);
+  const [peerStatuses, setPeerStatuses] = useState<PeerStatus[]>([]);
+  const [showPeerStatus, setShowPeerStatus] = useState(false);
+  const [echoCancellation, setEchoCancellation] = useState(false);
   
   const audioShare = SimplifiedAudioShare.getInstance();
 
@@ -54,8 +60,14 @@ const RoomInstrument: React.FC = () => {
         .filter((p: any) => p.id !== userInfo.id && p.status === 'active')
         .map((p: any) => p.id);
       
+      const participantNames = new Map<string, string>(
+        room.participants
+          .filter((p: any) => p.id !== userInfo.id)
+          .map((p: any) => [p.id as string, (p.userName || p.id.substring(0, 8)) as string])
+      );
+      
       console.log('RoomInstrument: Updating participants for audio sharing:', participantIds);
-      audioShare.updateParticipants(participantIds);
+      audioShare.updateParticipants(participantIds, participantNames);
       
       // Update stats periodically
       const updateStats = () => {
@@ -67,6 +79,10 @@ const RoomInstrument: React.FC = () => {
         if (config) {
           setAudioConfig(config);
         }
+        
+        // Update peer statuses
+        const statuses = audioShare.getPeerStatuses();
+        setPeerStatuses(statuses);
       };
       
       const interval = setInterval(updateStats, 1000);
@@ -137,6 +153,18 @@ const RoomInstrument: React.FC = () => {
       setAudioConfig(updatedConfig);
     }
   }, [audioShare]);
+
+  const handleMutePeer = useCallback((peerId: string) => {
+    audioShare.mutePeer(peerId);
+    // Force update peer statuses
+    setPeerStatuses(audioShare.getPeerStatuses());
+  }, [audioShare]);
+
+  const handleEchoCancellationChange = useCallback((enabled: boolean) => {
+    setEchoCancellation(enabled);
+    // This would be implemented at the audio capture level
+    console.log('Echo cancellation:', enabled ? 'enabled' : 'disabled');
+  }, []);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -228,6 +256,8 @@ const RoomInstrument: React.FC = () => {
             <AudioQualityControls
               config={audioConfig}
               onConfigChange={handleAudioConfigChange}
+              echoCancellation={echoCancellation}
+              onEchoCancellationChange={handleEchoCancellationChange}
             />
           )}
           
@@ -273,6 +303,33 @@ const RoomInstrument: React.FC = () => {
         <div className="text-xs text-red-600 mb-2 flex items-center gap-1 bg-red-50 dark:bg-red-900/20 p-2 rounded">
           <AlertCircle className="h-3 w-3" />
           {audioError}
+        </div>
+      )}
+
+      {/* Peer Connection Status */}
+      {isAudioSharing && peerStatuses.length > 0 && (
+        <div className="mb-3">
+          <Collapsible open={showPeerStatus} onOpenChange={setShowPeerStatus}>
+            <CollapsibleTrigger asChild>
+              <Button variant="ghost" size="sm" className="w-full justify-between h-7 px-2 text-xs">
+                <span className="flex items-center gap-1">
+                  <Users className="h-3 w-3" />
+                  Participant Connections ({peerStatuses.length})
+                </span>
+                {showPeerStatus ? (
+                  <ChevronUp className="h-3 w-3" />
+                ) : (
+                  <ChevronDown className="h-3 w-3" />
+                )}
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="mt-2">
+              <PeerConnectionStatus
+                peers={peerStatuses}
+                onMutePeer={handleMutePeer}
+              />
+            </CollapsibleContent>
+          </Collapsible>
         </div>
       )}
 

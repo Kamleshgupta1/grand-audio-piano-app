@@ -8,17 +8,21 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import { Settings2 } from 'lucide-react';
+import { Settings2, Sparkles } from 'lucide-react';
 import type { AudioProcessorConfig } from '@/utils/audio/audioProcessor';
 
 interface AudioQualityControlsProps {
   config: AudioProcessorConfig;
   onConfigChange: (config: Partial<AudioProcessorConfig>) => void;
+  echoCancellation?: boolean;
+  onEchoCancellationChange?: (enabled: boolean) => void;
 }
 
 const AudioQualityControls: React.FC<AudioQualityControlsProps> = ({
   config,
   onConfigChange,
+  echoCancellation = false,
+  onEchoCancellationChange,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
 
@@ -37,6 +41,28 @@ const AudioQualityControls: React.FC<AudioQualityControlsProps> = ({
               Adjust audio processing to reduce background noise
             </p>
           </div>
+
+          {/* Echo Cancellation */}
+          {onEchoCancellationChange && (
+            <div className="space-y-2 pb-2 border-b">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="h-3 w-3 text-purple-500" />
+                  <Label htmlFor="echo-cancel" className="text-xs">
+                    Echo Cancellation
+                  </Label>
+                </div>
+                <Switch
+                  id="echo-cancel"
+                  checked={echoCancellation}
+                  onCheckedChange={onEchoCancellationChange}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Reduces feedback and echo when multiple participants are in the same room
+              </p>
+            </div>
+          )}
 
           {/* Noise Gate */}
           <div className="space-y-2">
