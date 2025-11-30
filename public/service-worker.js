@@ -1,31 +1,29 @@
 
-const CACHE_NAME = 'harmonyhub-v2';
+const CACHE_NAME = 'harmonyhub-v3';
 const INSTRUMENTS_CACHE = 'harmonyhub-instruments-v1';
 
 const urlsToCache = [
   '/',
-  '/index.html',
   '/manifest.json',
   '/onlinevirtualinstrument.ico',
   '/HarmonyHubOnlineVirtualInstrument-192x192.png',
-  '/HarmonyHubOnlineVirtualInstrument-512x512.png',
-  '/static/js/bundle.js',
-  '/static/css/main.css'
+  '/HarmonyHubOnlineVirtualInstrument-512x512.png'
 ];
 
 
 // Install event
 self.addEventListener('install', event => {
   event.waitUntil(
-    Promise.all([
-      // Cache app shell
-      caches.open(CACHE_NAME).then(cache => {
-        console.log('Opened app cache');
-        return cache.addAll(urlsToCache);
-      }),
-    ])
+    caches.open(CACHE_NAME).then(cache => {
+      console.log('Opened app cache');
+      // Cache files individually to prevent failures from missing files
+      return Promise.allSettled(
+        urlsToCache.map(url => 
+          cache.add(url).catch(err => console.log('Failed to cache:', url, err))
+        )
+      );
+    }).then(() => self.skipWaiting())
   );
-  self.skipWaiting();
 });
 
 // Fetch event with improved caching strategy
