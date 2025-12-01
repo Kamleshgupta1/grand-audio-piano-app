@@ -57,8 +57,8 @@ const CategoryCard = ({ title, description, icon, to, color, icon2, imageUrl, id
 };
 
 return (
-  <Link to={to} className="block">
-    <div className="rounded-2xl overflow-hidden glass-card group hover-lift relative">
+  <Link to={to} className="block group">
+    <article className="rounded-2xl overflow-hidden bg-card shadow-md hover:shadow-xl transition-all duration-500 interactive-element relative border border-border/50">
       {instruments && instruments.length > 0 && (
         <div className="absolute top-2 right-2 z-30">
           <TooltipProvider>
@@ -93,40 +93,47 @@ return (
       )}
 
       <div className="relative h-48 overflow-hidden">
-
-        <div className="relative m-3 w-full h-full rounded-xl overflow-hidden">
+        <div className="relative w-full h-full rounded-xl overflow-hidden">
           {imageUrl ? (
-            <img
-              src={imageUrl}
-              alt={title}
-              className="absolute inset-0 w-full h-full object-cover object-center transform group-hover:scale-105 transition-transform duration-700"
-            />
+            <>
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-10" />
+              <img
+                src={imageUrl}
+                alt={`${title} - Browse ${title.toLowerCase()}`}
+                className="absolute inset-0 w-full h-full object-cover object-center transform group-hover:scale-110 transition-transform duration-700"
+                loading="lazy"
+              />
+            </>
           ) : (
-            <div className={`${color} absolute inset-0 flex items-center justify-center text-6xl z-10`}>
+            <div className={`${color} absolute inset-0 flex items-center justify-center text-6xl z-10 group-hover:text-7xl transition-all duration-500`}>
               {icon2}
             </div>
           )}
 
-          <div className="absolute bottom-0 p-6 w-full z-20 bg-gradient-to-t from-black/50 to-transparent">
-            <h3 className="text-xl font-semibold text-white">{title}</h3>
+          <div className="absolute bottom-0 p-6 w-full z-20 bg-gradient-to-t from-black/70 via-black/40 to-transparent">
+            <h3 className="text-xl font-bold text-white group-hover:scale-105 transition-transform duration-300">
+              {title}
+            </h3>
           </div>
         </div>
       </div>
-      <div className="p-5">
+      <div className="p-6">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-700">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-300 group-hover:scale-110">
               {icon}
             </div>
             <div>
-              <h3 className="font-medium">{title}</h3>
-              <p className="text-sm text-gray-500 mt-1">{description}</p>
+              <h3 className="text-lg font-bold text-card-foreground group-hover:text-primary transition-colors duration-300">
+                {title}
+              </h3>
+              <p className="text-sm text-muted-foreground mt-1">{description}</p>
             </div>
           </div>
-          <ChevronRight className="text-gray-400 group-hover:text-gray-700 transition-colors" />
+          <ChevronRight className="text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all duration-300" size={20} />
         </div>
       </div>
-    </div>
+    </article>
   </Link>
 );
 };

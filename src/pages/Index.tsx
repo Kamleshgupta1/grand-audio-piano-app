@@ -112,11 +112,11 @@ const Index = () => {
           imageUrl="https://images.unsplash.com/photo-1511379938547-c1f69419868d?auto=format&fit=crop&w=1920&q=80"
         />
 
-        <section className="py-16 px-4 bg-gray-50 dark:bg-gray-900">
+        <section className="py-16 px-4 bg-background">
           <div className="container mx-auto">
-            <div className="mb-10">
-              <h2 className="text-3xl font-bold mb-2">Featured Instruments</h2>
-              <p className="text-gray-600 dark:text-gray-400">Top picks and popular instruments to explore</p>
+            <div className="mb-10 animate-fade-in">
+              <h2 className="text-3xl md:text-4xl font-heading font-bold text-foreground mb-3">Featured Instruments</h2>
+              <p className="text-lg text-muted-foreground">Top picks and popular instruments to explore</p>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -132,22 +132,22 @@ const Index = () => {
               ))}
             </div>
             
-            <div className="mt-10 text-center">
+            <div className="mt-10 text-center animate-fade-in" style={{ animationDelay: '0.4s' }}>
               <Link to="/explore">
-                <Button variant="outline" size="lg" className="group">
+                <Button variant="outline" size="lg" className="group hover-scale shadow-md hover:shadow-xl">
                   Explore All Instruments
-                  <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                  <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-2 transition-transform duration-300" />
                 </Button>
               </Link>
             </div>
           </div>
         </section>
 
-        <section className="py-1 px-4 bg-gray-50 dark:bg-gray-900">
+        <section className="py-1 px-4 bg-muted/30">
           <div className="container mx-auto">
-            <div className="mb-10">
-              <h2 className="text-3xl font-bold mb-2">Browse by Category</h2>
-              <p className="text-gray-600 dark:text-gray-400">Explore instruments by category and find the perfect match for your musical journey</p>
+            <div className="mb-10 animate-fade-in">
+              <h2 className="text-3xl md:text-4xl font-heading font-bold text-foreground mb-3">Browse by Category</h2>
+              <p className="text-lg text-muted-foreground">Explore instruments by category and find the perfect match for your musical journey</p>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -165,36 +165,40 @@ const Index = () => {
               ))}
             </div>
             
-            <div className="mt-10 mb-5 text-center">
+            <div className="mt-10 mb-5 text-center animate-fade-in" style={{ animationDelay: '0.6s' }}>
               <Link to="/categories">
-                <Button variant="outline" size="lg" className="group">
+                <Button variant="outline" size="lg" className="group hover-scale shadow-md hover:shadow-xl">
                   View All Categories
-                  <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                  <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-2 transition-transform duration-300" />
                 </Button>
               </Link>
             </div>
           </div>
         </section>
 
-        <section className="py-12 px-4 bg-gray-100 dark:bg-gray-800">
+        <section className="py-12 px-4 bg-background">
           <div className="container mx-auto">
             <div className="flex flex-col md:flex-row items-center justify-between gap-8">
-              <div className="md:w-1/2">
-                <h2 className="text-2xl font-bold mb-4">Try Our Interactive Piano</h2>
-                <p className="text-gray-600 dark:text-gray-400 mb-6">
+              <div className="md:w-1/2 animate-fade-in">
+                <h2 className="text-3xl md:text-4xl font-heading font-bold text-foreground mb-4">
+                  Try Our Interactive Piano
+                </h2>
+                <p className="text-lg text-muted-foreground mb-6 leading-relaxed">
                   Experience music hands-on with our interactive piano. Play, record, and share your creations directly from your browser.
                 </p>
                 <Link to="/piano">
-                  <Button>
+                  <Button size="lg" className="hover-scale shadow-lg hover:shadow-xl">
                     Go to Piano
-                    <Piano className="ml-2 h-4 w-4" />
+                    <Piano className="ml-2 h-5 w-5" />
                   </Button>
                 </Link>
 
-                <h2 className="mt-8 font-bold mb-4">Try Other Interesting Instrument</h2>
-                <div className="mt-4 mb-4 mr-4 grid grid-cols-3 sm:grid-cols-3 gap-4">
+                <h2 className="mt-8 text-2xl font-heading font-bold text-foreground mb-4">
+                  Try Other Interesting Instruments
+                </h2>
+          <div className="mt-4 mb-4 mr-4 grid grid-cols-3 sm:grid-cols-3 gap-4">
   <Link to="/violin">
-    <Button className="w-full justify-between bg-gradient-to-r from-rose-200 to-rose-400 text-rose-900 hover:scale-105 transition-transform duration-300 shadow-md">
+    <Button className="w-full justify-between bg-gradient-bg-primary text-primary-foreground hover:opacity-90 hover-scale shadow-lg">
       <span className="flex items-center gap-2">
         <Music className="h-4 w-4" />
         Violin
@@ -203,7 +207,7 @@ const Index = () => {
   </Link>
 
   <Link to="/flute">
-    <Button className="w-full justify-between bg-gradient-to-r from-sky-200 to-sky-400 text-sky-900 hover:scale-105 transition-transform duration-300 shadow-md">
+    <Button className="w-full justify-between bg-gradient-bg-secondary text-primary-foreground hover:opacity-90 hover-scale shadow-lg">
       <span className="flex items-center gap-2">
         <Wind className="h-4 w-4" />
         Flute
@@ -212,7 +216,7 @@ const Index = () => {
   </Link>
 
   <Link to="/veena">
-    <Button className="w-full justify-between bg-gradient-to-r from-yellow-200 to-yellow-400 text-yellow-900 hover:scale-105 transition-transform duration-300 shadow-md">
+    <Button className="w-full justify-between bg-gradient-bg-accent text-primary-foreground hover:opacity-90 hover-scale shadow-lg">
       <span className="flex items-center gap-2">
         <Music2 className="h-4 w-4" />
         Veena
@@ -221,7 +225,7 @@ const Index = () => {
   </Link>
 
   <Link to="/harmonica">
-    <Button className="w-full justify-between bg-gradient-to-r from-indigo-200 to-indigo-400 text-indigo-900 hover:scale-105 transition-transform duration-300 shadow-md">
+    <Button className="w-full justify-between bg-primary hover:bg-primary-hover hover-scale shadow-lg">
       <span className="flex items-center gap-2">
         <Mic className="h-4 w-4" />
         Harmonica
@@ -230,7 +234,7 @@ const Index = () => {
   </Link>
 
   <Link to="/saxophone">
-    <Button className="w-full justify-between bg-gradient-to-r from-purple-200 to-purple-400 text-purple-900 hover:scale-105 transition-transform duration-300 shadow-md">
+    <Button className="w-full justify-between bg-accent hover:bg-accent-hover hover-scale shadow-lg">
       <span className="flex items-center gap-2">
         <Volume2 className="h-4 w-4" />
         Saxophone
@@ -239,7 +243,7 @@ const Index = () => {
   </Link>
 
   <Link to="/xylophone">
-    <Button className="w-full justify-between bg-gradient-to-r from-green-200 to-green-400 text-green-900 hover:scale-105 transition-transform duration-300 shadow-md">
+    <Button className="w-full justify-between bg-secondary hover:bg-secondary-hover hover-scale shadow-lg">
       <span className="flex items-center gap-2">
         <Drum className="h-4 w-4" />
         Xylophone
@@ -248,14 +252,17 @@ const Index = () => {
   </Link>
 </div>
 
-            
               </div>
-              <div className="md:w-1/2">
-                <img 
-                  src="https://images.unsplash.com/photo-1552422535-c45813c61732?auto=format&fit=crop&w=800&q=80" 
-                  alt="Interactive Piano" 
-                  className="rounded-lg shadow-md hover:shadow-xl transition-shadow"
-                />
+              <div className="md:w-1/2 animate-fade-in" style={{ animationDelay: '0.2s' }}>
+                <div className="relative rounded-2xl overflow-hidden shadow-2xl hover-lift">
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent z-10" />
+                  <img 
+                    src="https://images.unsplash.com/photo-1552422535-c45813c61732?auto=format&fit=crop&w=800&q=80" 
+                    alt="Interactive Virtual Piano - Play music online" 
+                    className="rounded-2xl shadow-xl hover:scale-105 transition-transform duration-700 w-full h-auto"
+                    loading="lazy"
+                  />
+                </div>
               </div>
             </div>
           </div>

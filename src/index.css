@@ -14,74 +14,116 @@
     --popover: 0 0% 100%;
     --popover-foreground: 240 10% 3.9%;
     
-    --primary: 240 5.9% 10%;
-    --primary-foreground: 0 0% 98%;
+    --primary: 262 83% 58%;
+    --primary-foreground: 0 0% 100%;
+    --primary-hover: 262 83% 48%;
     
-    --secondary: 240 4.8% 95.9%;
-    --secondary-foreground: 240 5.9% 10%;
+    --secondary: 240 5% 96%;
+    --secondary-foreground: 240 6% 10%;
+    --secondary-hover: 240 5% 90%;
     
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
+    --muted: 240 5% 96%;
+    --muted-foreground: 240 4% 46%;
     
-    --accent: 240 4.8% 95.9%;
-    --accent-foreground: 240 5.9% 10%;
+    --accent: 262 83% 58%;
+    --accent-foreground: 0 0% 100%;
+    --accent-hover: 262 83% 48%;
     
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
     
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
-    --ring: 240 5.9% 10%;
+    --border: 240 6% 90%;
+    --input: 240 6% 90%;
+    --ring: 262 83% 58%;
     
     --radius: 0.75rem;
     
+    /* Enhanced color palette for instruments */
+    --gradient-primary: linear-gradient(135deg, hsl(262 83% 58%) 0%, hsl(221 83% 53%) 100%);
+    --gradient-secondary: linear-gradient(135deg, hsl(262 83% 58%) 0%, hsl(295 83% 58%) 100%);
+    --gradient-accent: linear-gradient(to right, hsl(262 83% 58%), hsl(221 83% 53%));
+    
+    /* Instrument category colors */
+    --string-color: 45 93% 58%;
+    --wind-color: 217 91% 60%;
+    --percussion-color: 0 84% 60%;
+    --keyboard-color: 262 83% 58%;
+    --electronic-color: 142 71% 45%;
+    
+    /* Shadows and effects */
+    --shadow-sm: 0 1px 2px 0 hsl(240 6% 10% / 0.05);
+    --shadow-md: 0 4px 6px -1px hsl(240 6% 10% / 0.1), 0 2px 4px -1px hsl(240 6% 10% / 0.06);
+    --shadow-lg: 0 10px 15px -3px hsl(240 6% 10% / 0.1), 0 4px 6px -2px hsl(240 6% 10% / 0.05);
+    --shadow-xl: 0 20px 25px -5px hsl(240 6% 10% / 0.1), 0 10px 10px -5px hsl(240 6% 10% / 0.04);
+    
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-primary: 262 83% 58%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 5% 96%;
+    --sidebar-accent-foreground: 240 6% 10%;
+    --sidebar-border: 240 6% 90%;
+    --sidebar-ring: 262 83% 58%;
   }
   
   .dark {
     --background: 240 10% 3.9%;
     --foreground: 0 0% 98%;
     
-    --card: 240 10% 3.9%;
+    --card: 240 8% 8%;
     --card-foreground: 0 0% 98%;
     
-    --popover: 240 10% 3.9%;
+    --popover: 240 8% 8%;
     --popover-foreground: 0 0% 98%;
     
-    --primary: 0 0% 98%;
-    --primary-foreground: 240 5.9% 10%;
+    --primary: 262 83% 58%;
+    --primary-foreground: 0 0% 100%;
+    --primary-hover: 262 83% 68%;
     
-    --secondary: 240 3.7% 15.9%;
+    --secondary: 240 4% 16%;
     --secondary-foreground: 0 0% 98%;
+    --secondary-hover: 240 4% 20%;
     
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
+    --muted: 240 4% 16%;
+    --muted-foreground: 240 5% 65%;
     
-    --accent: 240 3.7% 15.9%;
-    --accent-foreground: 0 0% 98%;
+    --accent: 262 83% 58%;
+    --accent-foreground: 0 0% 100%;
+    --accent-hover: 262 83% 68%;
     
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 0 0% 100%;
     
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 240 4.9% 83.9%;
+    --border: 240 4% 16%;
+    --input: 240 4% 16%;
+    --ring: 262 83% 58%;
+    
+    /* Enhanced dark mode gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(262 83% 58%) 0%, hsl(221 83% 53%) 100%);
+    --gradient-secondary: linear-gradient(135deg, hsl(262 83% 58%) 0%, hsl(295 83% 58%) 100%);
+    --gradient-accent: linear-gradient(to right, hsl(262 83% 58%), hsl(221 83% 53%));
+    
+    /* Dark mode instrument colors (slightly brighter) */
+    --string-color: 45 93% 65%;
+    --wind-color: 217 91% 65%;
+    --percussion-color: 0 84% 65%;
+    --keyboard-color: 262 83% 65%;
+    --electronic-color: 142 71% 55%;
+    
+    /* Dark mode shadows */
+    --shadow-sm: 0 1px 2px 0 hsl(0 0% 0% / 0.3);
+    --shadow-md: 0 4px 6px -1px hsl(0 0% 0% / 0.4), 0 2px 4px -1px hsl(0 0% 0% / 0.3);
+    --shadow-lg: 0 10px 15px -3px hsl(0 0% 0% / 0.4), 0 4px 6px -2px hsl(0 0% 0% / 0.3);
+    --shadow-xl: 0 20px 25px -5px hsl(0 0% 0% / 0.4), 0 10px 10px -5px hsl(0 0% 0% / 0.3);
 
-    --sidebar-background: 240 10% 3.9%;
+    --sidebar-background: 240 8% 8%;
     --sidebar-foreground: 0 0% 98%;
-    --sidebar-primary: 0 0% 98%;
-    --sidebar-primary-foreground: 240 5.9% 10%;
-    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-primary: 262 83% 58%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 4% 16%;
     --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 240 4.9% 83.9%;
+    --sidebar-border: 240 4% 16%;
+    --sidebar-ring: 262 83% 58%;
   }
   
   * {
@@ -112,7 +154,19 @@
   }
   
   .hover-lift {
-    @apply transform transition-all duration-300 hover:-translate-y-1 hover:shadow-xl;
+    @apply transform transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl;
+  }
+  
+  .hover-scale {
+    @apply transform transition-all duration-300 hover:scale-105;
+  }
+  
+  .hover-glow {
+    @apply transition-all duration-300 hover:shadow-[0_0_20px_rgba(168,85,247,0.4)];
+  }
+  
+  .interactive-element {
+    @apply transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] cursor-pointer;
   }
   
   .subtle-border {
@@ -132,7 +186,19 @@
   }
   
   .gradient-text {
-    @apply bg-gradient-to-r from-gray-800 to-gray-600 dark:from-gray-200 dark:to-gray-400 bg-clip-text text-transparent;
+    @apply bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent;
+  }
+  
+  .gradient-bg-primary {
+    background: var(--gradient-primary);
+  }
+  
+  .gradient-bg-secondary {
+    background: var(--gradient-secondary);
+  }
+  
+  .gradient-bg-accent {
+    background: var(--gradient-accent);
   }
   
   .instrument-card {
