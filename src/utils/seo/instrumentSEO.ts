@@ -179,4 +179,36 @@ export const musicCategories = {
   }
 };
 
-export default { generateInstrumentSEO, musicCategories };
+// Helper function to get SEO data by instrument name
+export const getInstrumentSEOData = (instrumentName: string): InstrumentSEOData | null => {
+  const instrumentMap: Record<string, { category: string; features: string[] }> = {
+    piano: { category: 'Keyboard', features: ['88 keys', 'sustain pedal', 'recording', 'MIDI support'] },
+    guitar: { category: 'String', features: ['6 strings', 'chord diagrams', 'tuning', 'strumming'] },
+    violin: { category: 'String', features: ['4 strings', 'bow simulation', 'vibrato', 'pizzicato'] },
+    drums: { category: 'Percussion', features: ['drum kit', 'hi-hat', 'cymbal', 'kick drum'] },
+    flute: { category: 'Wind', features: ['breath control', 'fingering', 'octave range'] },
+    saxophone: { category: 'Wind', features: ['alto sax', 'breath control', 'jazz tones'] },
+    trumpet: { category: 'Wind', features: ['brass sound', 'mute options', 'valve control'] },
+    harmonica: { category: 'Wind', features: ['diatonic', 'bending', 'blues harp'] },
+    xylophone: { category: 'Percussion', features: ['mallet sounds', 'wooden bars', 'resonators'] },
+    kalimba: { category: 'Percussion', features: ['thumb piano', 'metal tines', 'mbira'] },
+    marimba: { category: 'Percussion', features: ['wooden bars', 'mallet techniques', 'resonators'] },
+    tabla: { category: 'Percussion', features: ['indian drums', 'bayan', 'dayan', 'taals'] },
+    sitar: { category: 'String', features: ['indian classical', 'meend', 'sympathetic strings'] },
+    veena: { category: 'String', features: ['carnatic', 'gamakas', 'frets'] },
+    banjo: { category: 'String', features: ['5 strings', 'clawhammer', 'bluegrass'] },
+    harp: { category: 'String', features: ['pedal harp', 'glissando', 'arpeggios'] },
+    theremin: { category: 'Electronic', features: ['contactless', 'antenna control', 'pitch bend'] },
+    'drum machine': { category: 'Electronic', features: ['step sequencer', 'patterns', 'tempo'] },
+    'chord progression': { category: 'Electronic', features: ['chord builder', 'progressions', 'theory'] }
+  };
+
+  const normalizedName = instrumentName.toLowerCase();
+  const config = instrumentMap[normalizedName];
+  
+  if (!config) return null;
+  
+  return generateInstrumentSEO(instrumentName, config.category, config.features);
+};
+
+export default { generateInstrumentSEO, getInstrumentSEOData, musicCategories };
