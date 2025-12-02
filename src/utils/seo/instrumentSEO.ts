@@ -1,6 +1,7 @@
 /**
  * SEO utilities for instrument pages
  * Generates comprehensive SEO data for better search engine visibility
+ * Optimized for both traditional and AI search engines
  */
 
 interface InstrumentSEOData {
@@ -11,6 +12,71 @@ interface InstrumentSEOData {
   ogImage?: string;
 }
 
+// Comprehensive keywords for virtual instruments SEO
+const globalKeywords = [
+  // Core virtual instrument keywords
+  'virtual instruments',
+  'online instruments',
+  'virtual musical instruments',
+  'play instruments online',
+  'free online instruments',
+  'browser music instruments',
+  'web based instruments',
+  'digital instruments',
+  'music simulator',
+  'instrument simulator',
+  
+  // Learning keywords
+  'learn music online',
+  'music education',
+  'music learning app',
+  'practice music online',
+  'music lessons free',
+  'interactive music learning',
+  'music training',
+  'learn to play music',
+  
+  // Action keywords
+  'play music online free',
+  'make music online',
+  'create music online',
+  'compose music online',
+  'music maker online',
+  'online music studio',
+  'virtual music studio',
+  
+  // Platform keywords
+  'music app',
+  'music web app',
+  'music application',
+  'music software online',
+  'no download music',
+  'instant play instruments',
+  
+  // Feature keywords
+  'realistic instrument sounds',
+  'HD instrument samples',
+  'MIDI support',
+  'keyboard playable instruments',
+  'touch friendly instruments',
+  'mobile music app',
+  
+  // Genre/Style keywords
+  'classical music instruments',
+  'jazz instruments online',
+  'rock music virtual',
+  'world music instruments',
+  'traditional instruments',
+  'electronic music tools',
+  
+  // Competitor-inspired keywords
+  'musicca alternative',
+  'virtual piano alternative',
+  'online instrument platform',
+  'music practice tool',
+  'instrument learning platform'
+];
+
 export const generateInstrumentSEO = (
   instrumentName: string,
   category: string,
@@ -20,25 +86,39 @@ export const generateInstrumentSEO = (
   const siteName = 'HarmonyHub';
   const baseUrl = 'https://www.virtualinstrumentshub.com';
   
-  const title = `Virtual ${instrumentName} - Play ${instrumentName} Online | ${siteName}`;
+  const title = `Virtual ${instrumentName} - Play ${instrumentName} Online Free | ${siteName}`;
   
-  const description = `Play virtual ${instrumentName.toLowerCase()} online for free. Interactive ${category.toLowerCase()} instrument with realistic sounds, recording features, and real-time collaboration. Perfect for learning and practice.`;
+  const description = `Play virtual ${instrumentName.toLowerCase()} online for free. Interactive ${category.toLowerCase()} instrument with realistic sounds, recording features, and real-time collaboration. Perfect for learning, practicing and creating music. No download required - play instantly in your browser.`;
   
-  const keywords = [
+  // Instrument-specific keywords
+  const instrumentKeywords = [
     `virtual ${instrumentName.toLowerCase()}`,
     `online ${instrumentName.toLowerCase()}`,
     `play ${instrumentName.toLowerCase()} online`,
     `${instrumentName.toLowerCase()} simulator`,
+    `${instrumentName.toLowerCase()} emulator`,
     `${instrumentName.toLowerCase()} practice`,
     `learn ${instrumentName.toLowerCase()}`,
+    `${instrumentName.toLowerCase()} lessons`,
     `interactive ${instrumentName.toLowerCase()}`,
     `digital ${instrumentName.toLowerCase()}`,
+    `free ${instrumentName.toLowerCase()}`,
+    `${instrumentName.toLowerCase()} online free`,
+    `${instrumentName.toLowerCase()} no download`,
+    `${instrumentName.toLowerCase()} browser`,
+    `${instrumentName.toLowerCase()} web`,
+    `${instrumentName.toLowerCase()} app`,
+    `${instrumentName.toLowerCase()} keyboard`,
+    `${instrumentName.toLowerCase()} sounds`,
+    `realistic ${instrumentName.toLowerCase()}`,
     `${category.toLowerCase()} instrument`,
-    'music learning',
-    'virtual instruments',
-    'online music',
-    ...features.map(f => f.toLowerCase())
-  ].join(', ');
+    `${category.toLowerCase()} ${instrumentName.toLowerCase()}`,
+    ...features.map(f => f.toLowerCase()),
+    ...features.map(f => `${instrumentName.toLowerCase()} ${f.toLowerCase()}`)
+  ];
+  
+  // Combine all keywords
+  const keywords = [...new Set([...instrumentKeywords, ...globalKeywords.slice(0, 30)])].join(', ');
 
   const structuredData = [
     // MusicComposition schema
