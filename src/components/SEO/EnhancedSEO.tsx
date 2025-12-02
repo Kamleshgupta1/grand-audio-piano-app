@@ -16,6 +16,70 @@ interface EnhancedSEOProps {
   tags?: string[];
 }
 
+// Comprehensive global SEO keywords for virtual instruments
+const globalSEOKeywords = [
+  // Core virtual instrument keywords
+  'virtual instruments online',
+  'play instruments online free',
+  'online musical instruments',
+  'virtual music instruments',
+  'free online instruments',
+  'browser music instruments',
+  'web based instruments',
+  'digital instruments',
+  'music simulator',
+  'instrument simulator',
+  'virtual instrument platform',
+  
+  // Learning & Education
+  'learn music online free',
+  'music education app',
+  'music learning platform',
+  'practice music online',
+  'music lessons free',
+  'interactive music learning',
+  'music training tool',
+  'learn to play music',
+  'music for beginners',
+  'music theory practice',
+  
+  // Action keywords
+  'play music online free',
+  'make music online',
+  'create music online',
+  'compose music online',
+  'music maker online',
+  'online music studio',
+  'virtual music studio',
+  'instant play instruments',
+  
+  // Platform keywords
+  'music app free',
+  'music web app',
+  'no download music',
+  'browser music player',
+  'touch friendly instruments',
+  'mobile music app',
+  
+  // Feature keywords
+  'realistic instrument sounds',
+  'HD instrument samples',
+  'MIDI support',
+  'keyboard playable',
+  'recording feature',
+  'music collaboration',
+  
+  // Genre keywords
+  'classical instruments online',
+  'world music instruments',
+  'traditional instruments',
+  'electronic music tools',
+  'percussion instruments',
+  'string instruments',
+  'wind instruments',
+  'keyboard instruments'
+];
+
 /**
  * Enhanced SEO component with comprehensive meta tags and structured data
  * Optimized for both traditional search engines and AI search engines
@@ -37,15 +101,10 @@ const EnhancedSEO: React.FC<EnhancedSEOProps> = ({
   const siteName = 'HarmonyHub - Virtual Musical Instruments';
   const formattedTitle = title.includes('HarmonyHub') ? title : `${title} | HarmonyHub`;
   
-  // Enhanced keywords combining provided keywords with relevant music terms
+  // Enhanced keywords combining provided keywords with global SEO keywords
   const enhancedKeywords = [
     keywords,
-    'virtual instruments',
-    'online music',
-    'music learning',
-    'interactive instruments',
-    'music education',
-    'digital music studio'
+    ...globalSEOKeywords.slice(0, 20)
   ].filter(Boolean).join(', ');
 
   // Base structured data for the website
