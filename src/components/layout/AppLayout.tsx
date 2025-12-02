@@ -1,10 +1,10 @@
-
 import { ReactNode } from 'react';
 import Navbar from './Navbar';
 import Footer from './Footer';
-import SEOHead from '../SEO/SEOHead';
-import { HelmetProvider } from 'react-helmet-async';
+import EnhancedSEO from '../SEO/EnhancedSEO';
+import instrumentSEO from '@/utils/seo/instrumentSEO';
 
+const { getInstrumentSEOData } = instrumentSEO;
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -12,42 +12,49 @@ interface AppLayoutProps {
   description?: string;
   canonical?: string;
   image?: string;
-  type?: string;
+  type?: 'website' | 'article' | 'music.song' | 'music.album' | 'music.playlist' | 'video.other';
   keywords?: string;
   instrumentType?: string;
 }
 
 const AppLayout = ({ 
   children,
-  title,
-  description,
+  title = "HarmonyHub - Virtual Musical Instruments",
+  description = "Play various musical instruments online in this interactive virtual music studio.",
   canonical,
   image,
-  type,
-  keywords,
+  type = 'website',
+  keywords = "virtual instruments, online music, play music, interactive instruments",
   instrumentType
 }: AppLayoutProps) => {
-  return (
-    <HelmetProvider>
+  // Get instrument-specific SEO data if instrumentType is provided
+  const instrumentSEO = instrumentType ? getInstrumentSEOData(instrumentType) : null;
+  
+  const seoTitle = instrumentSEO?.title || title;
+  const seoDescription = instrumentSEO?.description || description;
+  const seoKeywords = instrumentSEO?.keywords || keywords;
+  const structuredData = instrumentSEO?.structuredData || [];
 
-      <SEOHead 
-        title={title}
-        description={description}
-        route={canonical}
-        imagePath={image} 
-        pageType={type as 'website' | 'article'}
-        keywords={keywords}
-        instrumentType={instrumentType}
-      /> 
+  return (
+    <>
+      <EnhancedSEO 
+        title={seoTitle}
+        description={seoDescription}
+        canonical={canonical}
+        ogImage={image}
+        ogType={type}
+        keywords={seoKeywords}
+        structuredData={structuredData}
+      />
       
-      <div className="flex flex-col min-h-screen">
-      <Navbar />
-      <main className="flex-grow pt-24">
-        {children}
-      </main>
-      <Footer />
-    </div>
-    </HelmetProvider>
+      <div className="flex flex-col min-h-screen bg-background text-foreground">
+        <Navbar />
+        <main className="flex-grow pt-24">
+          {children}
+        </main>
+        <Footer />
+      </div>
+    </>
   );
 };
 

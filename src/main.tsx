@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
@@ -17,8 +17,12 @@ if (!rootElement) throw new Error('Failed to find the root element');
 
 const root = createRoot(rootElement);
 
-// Render the app
-root.render(<App />);
+// Render the app with StrictMode for better development debugging
+root.render(
+  <StrictMode>
+    <App />
+  </StrictMode>
+);
 
 // Report web vitals only in development
 if (import.meta.env.DEV) {

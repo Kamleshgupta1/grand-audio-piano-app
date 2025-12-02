@@ -1,17 +1,15 @@
+import React, { lazy, Suspense, useState } from "react";
 import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { OnboardingTutorial } from "@/components/onboarding/OnboardingTutorial";
-import React, { lazy, Suspense, useState } from "react";
 import MusicRooms from "./components/room/MusicRooms.tsx";
 import Blog from './components/blog/Blog.tsx';
 import RoomTemplates from './components/room/RoomTemplates';
 import { HelmetProvider } from 'react-helmet-async';
-// SEO and PWA Components
-import AdvancedSEO from '@/components/SEO/AdvancedSEO';
+// PWA Components
 import InstallPrompt from '@/components/pwa/InstallPrompt';
 
 // Loading fallback component
