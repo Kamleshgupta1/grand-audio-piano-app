@@ -1,3 +1,5 @@
+# HarmonyHub - Virtual Musical Instruments
+# https://www.virtualinstrumentshub.com
 
 User-agent: *
 Allow: /
@@ -6,8 +8,10 @@ Allow: /
 Disallow: /auth/
 Disallow: /api/
 Disallow: /admin/
+Disallow: /_next/
+Disallow: /private/
 
-# Allow instrument paths explicitly for better SEO
+# Allow all instrument paths for better SEO
 Allow: /piano
 Allow: /guitar
 Allow: /drums
@@ -21,7 +25,6 @@ Allow: /sitar
 Allow: /trumpet
 Allow: /veena
 Allow: /xylophone
-Allow: /timpani
 Allow: /kalimba
 Allow: /marimba
 Allow: /tabla
@@ -29,5 +32,44 @@ Allow: /theremin
 Allow: /drummachine
 Allow: /chordprogression
 
+# Allow static pages
+Allow: /about
+Allow: /contact
+Allow: /help
+Allow: /privacy
+Allow: /explore
+Allow: /categories
+Allow: /tutorial
+Allow: /music-rooms
+Allow: /blog
+
+# Crawl-delay for polite crawling
+Crawl-delay: 1
+
+# Googlebot specific
+User-agent: Googlebot
+Allow: /
+Crawl-delay: 0
+
+# Bingbot specific
+User-agent: Bingbot
+Allow: /
+Crawl-delay: 1
+
+# GPTBot (OpenAI) - Allow for AI search visibility
+User-agent: GPTBot
+Allow: /
+
+# Google-Extended (Bard) - Allow for AI search visibility
+User-agent: Google-Extended
+Allow: /
+
+# CCBot (Common Crawl) - Allow for AI training
+User-agent: CCBot
+Allow: /
+
 # Sitemap location
 Sitemap: https://www.virtualinstrumentshub.com/sitemap.xml
+
+# Host
+Host: https://www.virtualinstrumentshub.com
