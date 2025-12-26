@@ -259,6 +259,57 @@
   .touch-friendly {
     @apply min-h-[44px] min-w-[44px] flex items-center justify-center;
   }
+  
+  /* 3D Card tilt effect */
+  .card-3d {
+    transform-style: preserve-3d;
+    perspective: 1000px;
+  }
+  
+  .card-3d-inner {
+    transition: transform 0.3s ease-out;
+  }
+  
+  .card-3d:hover .card-3d-inner {
+    transform: rotateX(5deg) rotateY(-5deg) translateZ(10px);
+  }
+  
+  /* Glassmorphism variants */
+  .glass-premium {
+    @apply bg-white/60 dark:bg-black/40 backdrop-blur-xl border border-white/30 dark:border-white/10 shadow-xl;
+  }
+  
+  .glass-subtle {
+    @apply bg-white/30 dark:bg-black/20 backdrop-blur-md border border-white/10;
+  }
+  
+  /* Animated gradient border */
+  .gradient-border {
+    position: relative;
+    background: linear-gradient(var(--background), var(--background)) padding-box,
+                linear-gradient(135deg, hsl(var(--primary)), hsl(var(--accent))) border-box;
+    border: 2px solid transparent;
+    border-radius: var(--radius);
+  }
+  
+  /* Shimmer loading effect */
+  .shimmer {
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+  }
+  
+  @keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+  }
+  
+  /* Staggered animation delays */
+  .stagger-1 { animation-delay: 0.1s; }
+  .stagger-2 { animation-delay: 0.2s; }
+  .stagger-3 { animation-delay: 0.3s; }
+  .stagger-4 { animation-delay: 0.4s; }
+  .stagger-5 { animation-delay: 0.5s; }
 }
 
 @layer utilities {
@@ -305,5 +356,24 @@
   
   .dark .smooth-shadow {
     box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.15);
+  }
+  
+  /* Text gradient utility */
+  .text-gradient-primary {
+    @apply bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent;
+  }
+  
+  /* Focus ring utility */
+  .focus-ring {
+    @apply focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+  }
+  
+  /* Reduced motion support */
+  @media (prefers-reduced-motion: reduce) {
+    *, ::before, ::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
   }
 }
