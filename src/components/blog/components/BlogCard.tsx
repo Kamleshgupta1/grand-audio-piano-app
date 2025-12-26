@@ -38,7 +38,7 @@ const BlogCard: React.FC<BlogCardProps> = ({
       transition={{ delay: index * 0.1 }}
       className="w-full"
     >
-      <Card className="hover:shadow-2xl hover:scale-[1.02] transition-all duration-200 bg-gradient-to-br from-[#F1F0FB] via-white to-[#E5DEFF] border-2 border-[#E5DEFF] animate-fade-in h-full flex flex-col">
+      <Card className="hover:shadow-2xl hover:scale-[1.02] transition-all duration-200 bg-card dark:bg-card/60 border border-border/50 animate-fade-in h-full flex flex-col">
         <CardHeader className="flex-shrink-0">
           <div className="flex justify-between items-start mb-2">
             <CardTitle className="line-clamp-2 text-[#1A1F2C] flex-1 text-sm sm:text-base">
@@ -72,7 +72,7 @@ const BlogCard: React.FC<BlogCardProps> = ({
               )}
             </div>
           </div>
-          <CardDescription>
+          <CardDescription className="text-sm text-muted-foreground">
             <div className="flex items-center gap-2">
               {post.authorPhotoURL ? (
                 <img
@@ -85,7 +85,7 @@ const BlogCard: React.FC<BlogCardProps> = ({
                   {post.authorName?.charAt(0) || '?'}
                 </div>
               )}
-              <span className="text-[#7E69AB] text-xs sm:text-sm">
+              <span className="text-muted-foreground text-xs sm:text-sm">
                 {post.authorName || 'Unknown'}
               </span>
             </div>
@@ -98,12 +98,12 @@ const BlogCard: React.FC<BlogCardProps> = ({
               <img
                 src={post.imageUrl}
                 alt="Thumbnail"
-                className="w-full sm:w-[200px] lg:w-[250px] h-[120px] sm:h-[150px] object-cover rounded-lg shadow-md"
+                className="w-full sm:w-[220px] lg:w-[260px] h-[120px] sm:h-[150px] object-cover rounded-lg shadow-sm"
               />
             </div>
           )}
           <div
-            className="prose max-w-none text-xs sm:text-sm"
+            className="prose max-w-none text-sm md:text-base text-muted-foreground"
             dangerouslySetInnerHTML={{
               __html: post.content.substring(0, 80) + '...',
             }}
@@ -111,7 +111,7 @@ const BlogCard: React.FC<BlogCardProps> = ({
         </CardContent>
 
         <CardFooter className="flex justify-between items-center flex-shrink-0 pt-2">
-          <span className="text-xs text-[#9b87f5]">
+          <span className="text-xs text-muted-foreground">
             {post.createdAt
               ? formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })
               : 'Unknown date'}

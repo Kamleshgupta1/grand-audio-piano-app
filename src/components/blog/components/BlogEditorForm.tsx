@@ -65,7 +65,7 @@ const BlogEditorForm: React.FC<BlogEditorFormProps> = ({
   const shouldShowConvertToDraft = !isDraftMode && originalStatus && originalStatus !== 'draft';
 
   return (
-    <Card className="allow-copy p-4 sm:p-6 bg-gradient-to-r from-[#F1F0FB] to-[#D6BCFA] border-2 border-[#E5DEFF] shadow-lg animate-fade-in">
+    <Card className="allow-copy p-4 sm:p-6 bg-card dark:bg-card/60 border border-border/50 shadow-sm animate-fade-in">
       <form onSubmit={onSubmit} className="space-y-6">
         {isDraftMode && (
           <div className="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded mb-4">
@@ -80,7 +80,7 @@ const BlogEditorForm: React.FC<BlogEditorFormProps> = ({
         )}
 
         <div className="space-y-2">
-          <label htmlFor="title" className="text-sm font-medium text-[#7E69AB]">
+          <label htmlFor="title" className="text-sm font-medium text-foreground">
             Blog Title
           </label>
           <Input
@@ -89,12 +89,12 @@ const BlogEditorForm: React.FC<BlogEditorFormProps> = ({
             onChange={(e) => onTitleChange(e.target.value)}
             placeholder="Enter blog title"
             required
-            className="w-full border-[#9b87f5] bg-white"
+            className="w-full bg-background/5 dark:bg-card/50"
           />
         </div>
 
         <div className="space-y-2">
-          <label htmlFor="content" className="text-sm font-medium text-[#7E69AB]">
+          <label htmlFor="content" className="text-sm font-medium text-foreground">
             Blog Content
           </label>
 
@@ -110,21 +110,21 @@ const BlogEditorForm: React.FC<BlogEditorFormProps> = ({
             <style>
               {`
                 .custom-editor {
-                  height: 300px;
-                  background-color: white;
+                  height: 320px;
+                  background-color: var(--card);
                   border-radius: 0.5rem;
                   overflow: hidden;
                 }
                 .custom-editor .ql-toolbar {
-                  background-color: white;
+                  background-color: var(--card);
                   border-top-left-radius: 0.5rem;
                   border-top-right-radius: 0.5rem;
-                  border: 1px solid #9b87f5;
+                  border: 1px solid var(--border);
                 }
                 .custom-editor .ql-container {
-                  height: calc(300px - 42px);
-                  background-color: white;
-                  border: 1px solid #9b87f5;
+                  height: calc(320px - 42px);
+                  background-color: var(--card);
+                  border: 1px solid var(--border);
                   border-top: none;
                   border-bottom-left-radius: 0.5rem;
                   border-bottom-right-radius: 0.5rem;
@@ -137,7 +137,7 @@ const BlogEditorForm: React.FC<BlogEditorFormProps> = ({
 
         <div className="space-y-2">
           <div className="flex flex-col sm:flex-row justify-between items-start gap-2">
-            <label htmlFor="imageUrl" className="text-sm font-medium text-[#7E69AB]">
+            <label htmlFor="imageUrl" className="text-sm font-medium text-foreground">
               Optional Blog Image URL
             </label>
             {imageUrl && (
@@ -154,7 +154,7 @@ const BlogEditorForm: React.FC<BlogEditorFormProps> = ({
               value={imageUrl}
               onChange={(e) => onImageUrlChange(e.target.value)}
               placeholder="https://example.com/image.jpg"
-              className="bg-white border-[#9b87f5] flex-1"
+              className="flex-1 bg-background/5 dark:bg-card/50"
             />
             {imageUrl && (
               <img
@@ -175,7 +175,7 @@ const BlogEditorForm: React.FC<BlogEditorFormProps> = ({
                 variant="outline"
                 onClick={onSaveDraft}
                 disabled={loading}
-                className="border-[#9b87f5] text-[#7E69AB] hover:bg-[#E5DEFF] text-sm"
+                className="border-border/50 text-foreground hover:bg-muted/5 text-sm"
               >
                 <Save className="h-4 w-4" />
                 Save Draft
@@ -200,7 +200,7 @@ const BlogEditorForm: React.FC<BlogEditorFormProps> = ({
               variant="outline"
               onClick={onSchedule}
               disabled={loading}
-              className="border-[#9b87f5] text-[#7E69AB] hover:bg-[#E5DEFF] text-sm"
+              className="border-border/50 text-foreground hover:bg-muted/5 text-sm"
             >
               <Calendar className="h-4 w-4" />
               {isScheduledMode ? 'Reschedule' : 'Schedule'}
@@ -213,14 +213,14 @@ const BlogEditorForm: React.FC<BlogEditorFormProps> = ({
               variant="outline"
               onClick={onCancel}
               disabled={loading}
-              className="border-[#9b87f5] text-[#7E69AB] hover:bg-[#E5DEFF] text-sm"
+              className="border-border/50 text-foreground hover:bg-muted/5 text-sm"
             >
               Cancel
             </Button>
             <Button
               type="submit"
               disabled={loading}
-              className="bg-gradient-to-r from-[#9b87f5] to-[#1EAEDB] text-white font-bold hover:shadow-md transition-all text-sm"
+              className="bg-gradient-to-r from-primary/80 to-accent/70 text-white font-bold hover:shadow-md transition-all text-sm"
             >
               {loading ? 'Saving...' : isDraftMode ? 'Publish Post' : 'Update Post'}
             </Button>

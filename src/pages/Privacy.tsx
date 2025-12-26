@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { useTheme } from '@/contexts/ThemeContext';
 import { Shield, Lock, Eye, UserCheck, Bell, Baby, RefreshCw, Mail } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -63,7 +64,7 @@ const Privacy = () => {
       heroSubtitle="We take your privacy seriously. Learn how we collect, use, and protect your information."
       heroIcon={Shield}
     >
-      <div className="max-w-4xl mx-auto">
+      <div className="container mx-auto px-4 max-w-4xl space-y-6 transition-colors duration-200">
         {/* Last Updated Badge */}
         <div className="flex justify-center mb-8">
           <span className="inline-flex items-center px-4 py-2 bg-muted rounded-full text-sm text-muted-foreground">

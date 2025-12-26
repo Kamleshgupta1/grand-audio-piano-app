@@ -119,7 +119,7 @@ const Index = () => {
               <p className="text-lg text-muted-foreground">Top picks and popular instruments to explore</p>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
               {featuredInstruments.map((instrument) => (
                 <InstrumentCard
                   key={instrument.id}
@@ -132,7 +132,7 @@ const Index = () => {
               ))}
             </div>
             
-            <div className="mt-10 text-center animate-fade-in" style={{ animationDelay: '0.4s' }}>
+            <div className="mt-8 text-center animate-fade-in" style={{ animationDelay: '0.4s' }}>
               <Link to="/explore">
                 <Button variant="outline" size="lg" className="group hover-scale shadow-md hover:shadow-xl">
                   Explore All Instruments
@@ -143,14 +143,14 @@ const Index = () => {
           </div>
         </section>
 
-        <section className="py-1 px-4 bg-muted/30">
+        <section className="py-12 px-4 bg-muted/30 dark:bg-muted/20">
           <div className="container mx-auto">
             <div className="mb-10 animate-fade-in">
               <h2 className="text-3xl md:text-4xl font-heading font-bold text-foreground mb-3">Browse by Category</h2>
               <p className="text-lg text-muted-foreground">Explore instruments by category and find the perfect match for your musical journey</p>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {categories.map((category) => (
                 <CategoryCard
                   key={category.id}
@@ -165,7 +165,7 @@ const Index = () => {
               ))}
             </div>
             
-            <div className="mt-10 mb-5 text-center animate-fade-in" style={{ animationDelay: '0.6s' }}>
+            <div className="mt-8 mb-5 text-center animate-fade-in" style={{ animationDelay: '0.6s' }}>
               <Link to="/categories">
                 <Button variant="outline" size="lg" className="group hover-scale shadow-md hover:shadow-xl">
                   View All Categories
@@ -196,57 +196,51 @@ const Index = () => {
                 <h2 className="mt-8 text-2xl font-heading font-bold text-foreground mb-4">
                   Try Other Interesting Instruments
                 </h2>
-          <div className="mt-4 mb-4 mr-4 grid grid-cols-3 sm:grid-cols-3 gap-4">
+     <div className="mt-4 mb-4 mr-4 grid grid-cols-2 sm:grid-cols-3 gap-4">
   <Link to="/violin">
-    <Button className="w-full justify-between bg-gradient-bg-primary text-primary-foreground hover:opacity-90 hover-scale shadow-lg">
+    <Button className="w-full justify-between bg-gradient-to-r from-sky-400 to-blue-500 text-white hover:scale-105 transition-transform shadow-lg">
       <span className="flex items-center gap-2">
-        <Music className="h-4 w-4" />
-        Violin
+        <Music className="h-4 w-4" /> Violin
       </span>
     </Button>
   </Link>
 
   <Link to="/flute">
-    <Button className="w-full justify-between bg-gradient-bg-secondary text-primary-foreground hover:opacity-90 hover-scale shadow-lg">
+    <Button className="w-full justify-between bg-gradient-to-r from-blue-400 to-indigo-500 text-white hover:scale-105 transition-transform shadow-lg">
       <span className="flex items-center gap-2">
-        <Wind className="h-4 w-4" />
-        Flute
+        <Wind className="h-4 w-4" /> Flute
       </span>
     </Button>
   </Link>
 
   <Link to="/veena">
-    <Button className="w-full justify-between bg-gradient-bg-accent text-primary-foreground hover:opacity-90 hover-scale shadow-lg">
+    <Button className="w-full justify-between bg-gradient-to-r from-indigo-400 to-violet-500 text-white hover:scale-105 transition-transform shadow-lg">
       <span className="flex items-center gap-2">
-        <Music2 className="h-4 w-4" />
-        Veena
+        <Music2 className="h-4 w-4" /> Veena
       </span>
     </Button>
   </Link>
 
   <Link to="/harmonica">
-    <Button className="w-full justify-between bg-primary hover:bg-primary-hover hover-scale shadow-lg">
+    <Button className="w-full justify-between bg-gradient-to-r from-violet-400 to-purple-500 text-white hover:scale-105 transition-transform shadow-lg">
       <span className="flex items-center gap-2">
-        <Mic className="h-4 w-4" />
-        Harmonica
+        <Mic className="h-4 w-4" /> Harmonica
       </span>
     </Button>
   </Link>
 
   <Link to="/saxophone">
-    <Button className="w-full justify-between bg-accent hover:bg-accent-hover hover-scale shadow-lg">
+    <Button className="w-full justify-between bg-gradient-to-r from-purple-400 to-fuchsia-500 text-white hover:scale-105 transition-transform shadow-lg">
       <span className="flex items-center gap-2">
-        <Volume2 className="h-4 w-4" />
-        Saxophone
+        <Volume2 className="h-4 w-4" /> Saxophone
       </span>
     </Button>
   </Link>
 
   <Link to="/xylophone">
-    <Button className="w-full justify-between bg-secondary hover:bg-secondary-hover hover-scale shadow-lg">
+    <Button className="w-full justify-between bg-gradient-to-r from-indigo-500 to-purple-600 text-white hover:scale-105 transition-transform shadow-lg">
       <span className="flex items-center gap-2">
-        <Drum className="h-4 w-4" />
-        Xylophone
+        <Drum className="h-4 w-4" /> Xylophone
       </span>
     </Button>
   </Link>

@@ -96,13 +96,13 @@ const BlogList: React.FC = () => {
 
 
       {displayPosts.length === 0 ? (
-        <div className="text-center py-12 animate-fade-in bg-[#F1F0FB] rounded-lg border border-[#E5DEFF] shadow-inner">
-          <FileText className="mx-auto h-12 w-12 text-[#D6BCFA] mb-4 animate-bounce" />
-          <h3 className="text-xl font-medium text-[#7E69AB] mb-2">
+        <div className="text-center py-12 animate-fade-in bg-card dark:bg-card/60 rounded-lg border border-border dark:border-border/60 shadow-inner">
+          <FileText className="mx-auto h-12 w-12 text-primary/70 dark:text-primary/60 mb-4 animate-bounce" />
+          <h3 className="text-xl font-medium text-foreground mb-2">
             {viewMode === 'scheduled' ? 'No scheduled posts' : 
              viewMode === 'drafts' ? 'No draft posts' : 'No blog posts yet'}
           </h3>
-          <p className="text-gray-500">
+          <p className="text-muted-foreground">
             {viewMode === 'scheduled' 
               ? "You don't have any posts scheduled for publication yet."
               : viewMode === 'drafts'

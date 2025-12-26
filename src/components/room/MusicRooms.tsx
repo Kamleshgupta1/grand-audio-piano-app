@@ -210,7 +210,7 @@ const MusicRooms = () => {
       <div className="container mx-auto px-4 py-8 animate-fade-in">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
           <div>
-            <h1 className="text-3xl font-bold mb-2">Live Music Rooms</h1>
+            <h1 className="text-3xl font-bold mb-2 text-foreground">Live Music Rooms</h1>
             <p className="text-muted-foreground">
               Join a live music session or create your own to collaborate with other musicians.
             </p>
@@ -238,9 +238,9 @@ const MusicRooms = () => {
         </div>
 
         {filteredRooms.length === 0 ? (
-          <div className="text-center py-16 bg-muted/30 rounded-lg border border-dashed animate-fade-in">
+          <div className="text-center py-12 bg-card dark:bg-card/50 rounded-lg border border-dashed border-border/40 animate-fade-in">
             <Music className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-xl font-medium mb-2">No music rooms available</h3>
+            <h3 className="text-xl font-medium mb-2 text-foreground">No music rooms available</h3>
             <p className="text-muted-foreground mb-6">
               {activeTab === 'private'
                 ? "You don't have access to any private rooms at the moment."

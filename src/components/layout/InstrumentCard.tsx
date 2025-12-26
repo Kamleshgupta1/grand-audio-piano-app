@@ -10,29 +10,35 @@ interface InstrumentCardProps {
 
 const InstrumentCard = ({ id, name, category, imageUrl, isFeatured }: InstrumentCardProps) => {
   return (
-    <Link to={`/${id}`} className="block group">
-      <article className="relative bg-card rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-500 interactive-element">
+    <Link
+      to={`/${id}`}
+      className="block group focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 rounded-lg"
+      aria-labelledby={`instrument-${id}-title`}
+      aria-label={`Open ${name} instrument`}
+    >
+      <article className="relative bg-card rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 interactive-element">
         {isFeatured && (
-          <div className="absolute top-4 right-4 z-10 bg-gradient-bg-primary text-primary-foreground px-3 py-1 rounded-full text-xs font-semibold shadow-lg animate-pulse">
+          <div className="absolute top-4 right-4 z-10 bg-primary/10 text-primary px-3 py-1 rounded-full text-xs font-semibold shadow-lg animate-pulse">
             Featured
           </div>
         )}
         
-        <div className={`w-full ${isFeatured ? 'h-64' : 'h-48'} overflow-hidden relative`}>
+        <div className={`w-full ${isFeatured ? 'h-64' : 'h-48'} overflow-hidden relative`}> 
           <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 z-10" />
-          <img 
-            src={imageUrl} 
+          <img
+            src={imageUrl}
             alt={`${name} - Virtual ${category} Instrument`}
-            className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700" 
+            className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-700"
             loading="lazy"
+            decoding="async"
           />
         </div>
         
-        <div className="p-5 bg-card">
+        <div className="p-5">
           <span className="inline-block text-xs font-semibold text-primary uppercase tracking-wider mb-2 bg-primary/10 px-2 py-1 rounded">
             {category}
           </span>
-          <h3 className="text-lg font-bold text-card-foreground mb-2 group-hover:text-primary transition-colors duration-300">
+          <h3 id={`instrument-${id}-title`} className="text-lg font-bold text-foreground mb-2 group-hover:text-primary transition-colors duration-300">
             {name}
           </h3>
           <div className="flex justify-between items-center mt-4">

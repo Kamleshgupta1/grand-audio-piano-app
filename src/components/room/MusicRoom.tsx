@@ -4,7 +4,7 @@ import { useParams, Navigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useRoomJoin } from '@/hooks/useRoomJoin';
 import { toast } from '@/hooks/use-toast';
-import { RoomProvider } from './RoomContext';
+import { RoomProvider, useRoom } from './RoomContext';
 import RoomHeader from './RoomHeader';
 import RoomParticipants from './RoomParticipants';
 import RoomChat from './RoomChat';
@@ -78,16 +78,45 @@ const MusicRoom: React.FC = () => {
   return (
     <AppLayout>
       <RoomProvider>
-        <div className="flex flex-col h-full">
-          <RoomHeader />
-          <JoinRequests />
-          <RoomInstrument />
-        </div>
-        <PrivateMessaging />
-        <JoinPrivateRoom />
+        <RoomContent />
       </RoomProvider>
     </AppLayout>
   );
 };
 
 export default MusicRoom;
+
+// Separate component to safely use useRoom hook within RoomProvider
+const RoomContent: React.FC = () => {
+  const { room, isLoading } = useRoom();
+
+  // Wait for room data to load before rendering dependent components
+  if (isLoading || !room) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin h-8 w-8 border-4 border-primary rounded-full border-t-transparent mx-auto mb-4"></div>
+          <p>Loading room...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="container mx-auto px-4 sm:px-6 py-6">
+      <RoomHeader />
+      <div className="grid grid-cols-1 mt-4">
+        <main className="lg:col-span-2">
+          <div className="bg-card dark:bg-card/60 rounded-lg p-4 h-full min-h-[60vh]">
+            <RoomInstrument />
+          </div>
+        </main>
+        <aside className="lg:col-span-1 space-y-4">
+          <JoinRequests />
+        </aside>
+      </div>
+      <PrivateMessaging />
+      <JoinPrivateRoom />
+    </div>
+  );
+};

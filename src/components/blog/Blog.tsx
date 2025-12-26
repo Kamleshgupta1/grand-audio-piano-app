@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { useTheme } from '@/contexts/ThemeContext';
 import { Routes, Route } from 'react-router-dom';
 import AppLayout from '@/components/layout/AppLayout';
 import BlogList from '@/components/blog/BlogList';
@@ -19,14 +20,16 @@ const Blog = () => {
       description="Read the latest articles, tips, and news about music and instruments"
     >
       {/* Add beautiful animated gradient header */}
-      <div className="w-full py-8 mb-2 bg-gradient-to-r from-[#E5DEFF] via-[#9b87f5] to-[#1EAEDB] animate-fade-in rounded-b-2xl shadow-lg flex flex-col md:flex-row items-center justify-between px-6 gap-4">
-        <h1 className="text-3xl font-extrabold text-[#1A1F2C] tracking-tight drop-shadow-lg animate-fade-in">🎶 HarmonyHub Blog</h1>
-        <span onClick={() => toast.info('Feature not available yet!')} className="text-md text-[#221F26] bg-white bg-opacity-70 px-3 py-1 rounded-xl font-medium shadow animate-scale-in">
-          New: Share your music journey!
-        </span>
+      <div className="container mx-auto px-4">
+        <div className="w-full py-8 mb-4 bg-gradient-to-r from-primary/10 via-accent/5 to-primary/10 dark:from-primary/20 dark:via-accent/10 dark:to-primary/20 rounded-b-2xl shadow-lg flex flex-col md:flex-row items-center justify-between px-6 gap-4 transition-colors duration-200">
+          <h1 className="text-2xl md:text-4xl font-extrabold text-foreground tracking-tight drop-shadow-sm animate-fade-in">🎶 HarmonyHub Blog</h1>
+          <span onClick={() => toast.info('Feature not available yet!')} className="text-sm md:text-md text-muted-foreground bg-card/70 px-3 py-1 rounded-xl font-medium shadow animate-scale-in">
+            New: Share your music journey!
+          </span>
+        </div>
       </div>
 
-      <div className="animate-fade-in min-h-screen bg-gradient-to-br from-purple-50 to-blue-50">
+      <div className="animate-fade-in min-h-screen bg-card dark:bg-card/60 transition-colors duration-200 py-8">
 
         <Routes>
           <Route path="/" element={<BlogList />} />

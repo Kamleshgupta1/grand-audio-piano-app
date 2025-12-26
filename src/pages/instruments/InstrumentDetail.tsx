@@ -284,8 +284,8 @@ const InstrumentDetail = () => {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-pulse flex flex-col items-center">
-          <div className="h-12 w-48 bg-gray-300 rounded mb-4"></div>
-          <div className="h-4 w-32 bg-gray-300 rounded"></div>
+          <div className="h-12 w-48 bg-muted/30 dark:bg-muted/50 rounded mb-4"></div>
+          <div className="h-4 w-32 bg-muted/30 dark:bg-muted/50 rounded"></div>
         </div>
       </div>
     );
@@ -294,10 +294,10 @@ const InstrumentDetail = () => {
   if (!instrument) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-4">
-        <h1 className="text-2xl font-bold mb-4">Instrument Not Found</h1>
-        <p className="text-gray-600 dark:text-gray-400 mb-6">
-          We couldn't find the instrument you're looking for.
-        </p>
+          <h1 className="text-2xl font-bold mb-4 text-foreground">Instrument Not Found</h1>
+          <p className="text-muted-foreground mb-6">
+            We couldn't find the instrument you're looking for.
+          </p>
         <Link to="/explore">
           <Button>Browse All Instruments</Button>
         </Link>
@@ -322,38 +322,38 @@ const InstrumentDetail = () => {
         
         <div className="lg:w-1/2">
           <div className="mb-6">
-            <h1 className="text-3xl font-bold">{instrument.name}</h1>
-            <p className="text-gray-500">{instrument.category} Instrument</p>
+            <h1 className="text-3xl font-bold text-foreground">{instrument.name}</h1>
+            <p className="text-muted-foreground">{instrument.category} Instrument</p>
           </div>
           
           <div className="mb-6">
-            <p className="text-gray-700 dark:text-gray-300">{instrument.description}</p>
+            <p className="text-foreground">{instrument.description}</p>
           </div>
           
           <div className="mb-6">
-            <h3 className="font-medium mb-2">Key Features</h3>
+            <h3 className="font-medium mb-2 text-foreground">Key Features</h3>
             <ul className="list-disc list-inside">
               {instrument.features.map((feature: string, index: number) => (
-                <li key={index} className="text-gray-700 dark:text-gray-300">{feature}</li>
+                <li key={index} className="text-foreground">{feature}</li>
               ))}
             </ul>
           </div>
           
           <div className="mb-6">
-            <h3 className="font-medium mb-2">Specifications</h3>
+            <h3 className="font-medium mb-2 text-foreground">Specifications</h3>
             <div className="grid grid-cols-2 gap-2">
               {Object.entries(instrument.specifications).map(([key, value]: [string, any], index: number) => (
                 <div key={index} className="flex justify-between">
-                  <span className="text-gray-500">{key}:</span>
-                  <span className="text-gray-700 dark:text-gray-300">{value}</span>
+                  <span className="text-muted-foreground">{key}:</span>
+                  <span className="text-foreground">{value}</span>
                 </div>
               ))}
             </div>
           </div>
           
           <div className="mb-6">
-            <h3 className="font-medium mb-2">Price Range</h3>
-            <p className="text-gray-700 dark:text-gray-300">{instrument.price}</p>
+            <h3 className="font-medium mb-2 text-foreground">Price Range</h3>
+            <p className="text-foreground">{instrument.price}</p>
           </div>
           
           <div className="flex flex-wrap gap-3 mb-8">
@@ -415,8 +415,8 @@ const InstrumentDetail = () => {
           </div>
           
           {generatedMusic.instrumental && (
-            <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg mb-8 animate-fade-in">
-              <h3 className="font-medium mb-3">Generated Instrumental</h3>
+            <div className="p-4 bg-card dark:bg-card/60 rounded-lg mb-8 animate-fade-in">
+              <h3 className="font-medium mb-3 text-foreground">Generated Instrumental</h3>
               <div className="space-y-4">
                 <div className="flex flex-wrap gap-2">
                   <Button size="sm" onClick={playGeneratedMusic}>
@@ -463,13 +463,13 @@ const InstrumentDetail = () => {
                 )}
                 
                 <div className="flex justify-between items-center pt-2">
-                  <div className="text-sm text-gray-500">
+                  <div className="text-sm text-muted-foreground">
                     <FileMusic className="h-4 w-4 inline mr-1" /> 
                     Instrumental track
                   </div>
                   <Link 
                     to="/piano" 
-                    className="text-sm text-blue-600 hover:text-blue-800 transition-colors"
+                    className="text-sm text-primary hover:text-primary/80 transition-colors"
                   >
                     Play these notes on piano →
                   </Link>
@@ -483,7 +483,7 @@ const InstrumentDetail = () => {
       <Separator className="my-8" />
       
       <div className="mb-8">
-        <h2 className="text-2xl font-bold mb-4">Related Instruments</h2>
+        <h2 className="text-2xl font-bold mb-4 text-foreground">Related Instruments</h2>
         <InstrumentRelated relatedInstruments={instrument.relatedInstruments} />
       </div>
     </div>

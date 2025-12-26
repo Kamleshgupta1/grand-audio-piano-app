@@ -77,8 +77,8 @@ const BlogDetail: React.FC = () => {
   if (!blogPost) {
     return (
       <div className="container mx-auto px-6 py-10 text-center animate-fade-in">
-        <h2 className="text-2xl font-bold mb-4 text-[#7E69AB]">Blog post not found</h2>
-        <Button asChild className="bg-gradient-to-r from-[#9b87f5] to-[#1EAEDB] text-white animate-scale-in">
+        <h2 className="text-2xl font-bold mb-4 text-foreground">Blog post not found</h2>
+        <Button asChild className="bg-gradient-to-r from-primary/80 to-accent/70 text-white animate-scale-in">
           <Link to="/blog">Back to Blog</Link>
         </Button>
       </div>
@@ -94,7 +94,7 @@ const BlogDetail: React.FC = () => {
         </Link>
       </Button>
 
-      <Card className="overflow-hidden border-2 border-[#E5DEFF] bg-gradient-to-br from-[#F1F0FB] to-[#FFFFFF]">
+      <Card className="overflow-hidden border border-border/50 bg-card dark:bg-card/60">
         <div className="p-6">
           <div className="flex justify-between items-start">
             <h1 className="text-3xl font-bold text-[#221F26] drop-shadow">{blogPost.title}</h1>
@@ -110,7 +110,7 @@ const BlogDetail: React.FC = () => {
             )}
           </div>
 
-          <div className="flex items-center gap-2 mt-4 text-sm text-[#7E69AB]">
+          <div className="flex items-center gap-2 mt-4 text-sm text-muted-foreground">
             {blogPost.authorPhotoURL ? (
               <img src={blogPost.authorPhotoURL} alt={blogPost.authorName} className="w-6 h-6 rounded-full border-2 border-[#9b87f5]" />
             ) : (
@@ -134,7 +134,7 @@ const BlogDetail: React.FC = () => {
     <img
       src={blogPost.imageUrl}
       alt="Blog visual"
-      className="w-[300px] h-[200px] object-cover rounded-lg shadow"
+      className="w-full max-w-3xl h-auto object-cover rounded-lg shadow-sm"
     />
   </div>
 )}
@@ -143,7 +143,7 @@ const BlogDetail: React.FC = () => {
           <Separator className="my-6" />
 
           <div
-            className="prose dark:prose-invert max-w-none animate-fade-in"
+            className="prose dark:prose-invert max-w-none animate-fade-in text-foreground"
             dangerouslySetInnerHTML={{ __html: blogPost.content || '<p>No content available.</p>' }}
           />
         </div>

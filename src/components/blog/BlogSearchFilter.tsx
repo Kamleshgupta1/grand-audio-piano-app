@@ -110,11 +110,16 @@ onSearch({ query: '', sort: 'newest', startDate: null, endDate: null });
    
     <motion.div
   initial={{ opacity: 0, y: -8 }}   animate={{ opacity: 1, y: 0 }}
-  className="bg-gradient-to-br from-[#F1F0FB] via-white to-[#E5DEFF] border-b-2 border-violet-500 animate-fade-in dark:border-white dark:text-white dark:bg-[#1e1e2f] shadow-md rounded-xl p-4 mb-6 transition-all duration-300"
+  className="container mx-auto max-w-5xl px-3 sm:px-4 mb-6
+        rounded-2xl p-4 sm:p-5
+        bg-white/80 dark:bg-slate-900/70
+        backdrop-blur-xl
+        border border-border/60 dark:border-slate-700/60
+        shadow-lg shadow-indigo-500/5 dark:shadow-black/40"
 >
-  <div className="grid gap-3 md:grid-cols-[60%_40%] items-center max-w-5xl mx-auto animate-fade-in" style={{ animationDelay: '0.4s' }}>
+  <div className="grid gap-3 md:grid-cols-[60%_40%] items-center animate-fade-in" style={{ animationDelay: '0.4s' }}>
     {/* Search Input + Button */}
-    <div className="grid grid-cols-[1fr_auto] gap-2">
+    <div className="grid grid-cols-[1fr_auto]">
       <Input
   value={query}
   onChange={(e) => {
@@ -123,7 +128,7 @@ onSearch({ query: '', sort: 'newest', startDate: null, endDate: null });
     onSearch({ query: newQuery, sort, startDate: range[0]?.startDate, endDate: range[0]?.endDate });
   }}
         placeholder="Search by title, author, content..."
-        className="text-sm dark:bg-[#2b2b3b] dark:text-white"
+        className="text-sm bg-background/5 dark:bg-card/50 text-foreground rounded-md"
       />
       
     </div>
@@ -136,9 +141,15 @@ onSearch({ query: '', sort: 'newest', startDate: null, endDate: null });
         variant="outline"
         className="dark:border-white dark:text-white"
       >
-        {sort === 'newest' ? <SortDesc size={16} /> :
-         sort === 'oldest' ? <SortAsc size={16} /> :
-         sort === 'az' ? 'A-Z' : 'Z-A'}
+        {sort === "newest" ? (
+              <SortDesc size={16} />
+            ) : sort === "oldest" ? (
+              <SortAsc size={16} />
+            ) : sort === "az" ? (
+              "A–Z"
+            ) : (
+              "Z–A"
+            )}
       </Button>
 
       
@@ -149,7 +160,7 @@ onSearch({ query: '', sort: 'newest', startDate: null, endDate: null });
     className="dark:border-white dark:text-white"
     onClick={() => setShowCalendar((prev) => !prev)}
   >
-    <CalendarIcon className="mr-1 h-4 w-4" />
+    <CalendarIcon className="h-4 w-4" />
     {range[0].startDate && range[0].endDate
       ? `${format(range[0].startDate, 'MMM dd')} - ${format(range[0].endDate, 'MMM dd')}`
       : ''}
@@ -173,9 +184,8 @@ onSearch({ query: '', sort: 'newest', startDate: null, endDate: null });
 
       <Button
         onClick={handleSearch}
-        className="bg-gradient-to-r from-indigo-500 to-cyan-500 text-white shadow-md"
+        className="bg-gradient-to-r from-primary/80 to-accent/70 text-white shadow-sm"
       >
-    
         Search
       </Button>
 
@@ -183,7 +193,7 @@ onSearch({ query: '', sort: 'newest', startDate: null, endDate: null });
       <Button
         variant="outline"
         onClick={handleClear}
-        className="border border-purple-500 bg-gradient-to-r from-indigo-500 to-cyan-500 dark:border-white text-white hover:bg-gray-100 dark:hover:bg-[#3a3a4a] transition-all"
+        className="border border-border/50 text-foreground hover:bg-muted/5 transition-colors"
       >
         Clear
       </Button>

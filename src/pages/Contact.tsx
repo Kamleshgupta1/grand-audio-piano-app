@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "@/components/ui/use-toast";
 import StaticPageLayout from "@/components/layout/StaticPageLayout";
+import { useTheme } from '@/contexts/ThemeContext';
 
 const Contact = () => {
   const [formData, setFormData] = useState({
@@ -77,7 +78,7 @@ const Contact = () => {
       heroSubtitle="Have questions about our instruments? Want to collaborate? We'd love to hear from you!"
       heroIcon={MessageSquare}
     >
-      <div className="max-w-6xl mx-auto">
+      <div className="container mx-auto px-4 max-w-6xl transition-colors duration-200">
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Contact Info Cards */}
           <motion.div

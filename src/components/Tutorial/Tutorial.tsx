@@ -1,6 +1,7 @@
 
 import AppLayout from '@/components/layout/AppLayout';
 import React, { useRef, useState, useEffect } from "react";
+import { useTheme } from '@/contexts/ThemeContext';
 import Navbar from '../layout/Navbar';
 import Footer from '../layout/Footer';
 
@@ -27,25 +28,164 @@ import HarmonicaTutorial from "@/components/Tutorial/InstrumentWiseTutorial/Harm
 import DrumTutorial from "@/components/Tutorial/InstrumentWiseTutorial/DrumTutorial";
 import XylophoneTutorial from "@/components/Tutorial/InstrumentWiseTutorial/XylophoneTutorial";
  
-const instrumentColors: Record<string, { bg: string, text: string, border: string }> = {
-  violin: { bg: "from-pink-100 to-pink-50", text: "text-pink-800", border: "border-pink-500" },  
-  guitar: { bg: "from-blue-100 to-blue-50", text: "text-blue-800", border: "border-blue-400" },
-  harp: { bg: "from-purple-100 to-purple-50", text: "text-purple-800", border: "border-purple-400" },
-  sitar: { bg: "from-orange-100 to-orange-50", text: "text-orange-800", border: "border-orange-500" },
-  veena: { bg: "from-red-100 to-red-50", text: "text-red-800", border: "border-red-400" },
-  banjo: { bg: "from-amber-100 to-amber-50", text: "text-amber-800", border: "border-amber-400" },
-  flute: { bg: "from-teal-100 to-teal-50", text: "text-teal-800", border: "border-teal-300" },
-  saxophone: { bg: "from-yellow-100 to-yellow-50", text: "text-yellow-800", border: "border-yellow-600" },
-  trumpet: { bg: "from-green-100 to-green-50", text: "text-green-800", border: "border-green-500" },
-  harmonica: { bg: "from-indigo-100 to-indigo-50", text: "text-indigo-800", border: "border-indigo-300" },
-  drums: { bg: "from-gray-100 to-gray-50", text: "text-gray-800", border: "border-gray-700" },
-  xylophone: { bg: "from-cyan-100 to-green-50", text: "text-cyan-800", border: "border-cyan-700" },
-  piano: { bg: "from-violet-100 to-violet-50", text: "text-violet-800", border: "border-violet-600" },
-  kalimba: { bg: "from-orange-100 to-orange-50", text: "text-orange-800", border: "border-orange-400" },
-  tabla: { bg: "from-teal-100 to-teal-50", text: "text-teal-800", border: "border-teal-600" },
-  theremin: { bg: "from-gray-100 to-green-50", text: "text-gray-800", border: "border-gray-600" },
-  default: { bg: "from-gray-100 to-gray-50", text: "text-gray-800", border: "border-gray-300" }
+const instrumentColors: Record<
+  string,
+  { bg: string; text: string; border: string }
+> = {
+  violin: {
+    bg: `
+      from-sky-100 via-blue-100 to-indigo-200
+      dark:from-indigo-900 dark:via-blue-900 dark:to-slate-900
+    `,
+    text: "text-slate-800 dark:text-indigo-100",
+    border: "border-blue-300 dark:border-indigo-700"
+  },
+
+  guitar: {
+    bg: `
+      from-blue-100 via-indigo-100 to-violet-200
+      dark:from-blue-900 dark:via-indigo-900 dark:to-violet-900
+    `,
+    text: "text-slate-800 dark:text-violet-100",
+    border: "border-indigo-300 dark:border-violet-700"
+  },
+
+  harp: {
+    bg: `
+      from-sky-100 via-cyan-100 to-blue-200
+      dark:from-sky-900 dark:via-cyan-900 dark:to-blue-900
+    `,
+    text: "text-slate-800 dark:text-cyan-100",
+    border: "border-cyan-300 dark:border-blue-700"
+  },
+
+  sitar: {
+    bg: `
+      from-indigo-100 via-purple-100 to-violet-200
+      dark:from-indigo-900 dark:via-purple-900 dark:to-violet-900
+    `,
+    text: "text-slate-800 dark:text-purple-100",
+    border: "border-purple-300 dark:border-violet-700"
+  },
+
+  veena: {
+    bg: `
+      from-blue-100 via-violet-100 to-purple-200
+      dark:from-blue-900 dark:via-violet-900 dark:to-purple-900
+    `,
+    text: "text-slate-800 dark:text-purple-100",
+    border: "border-violet-300 dark:border-purple-700"
+  },
+
+  banjo: {
+    bg: `
+      from-sky-100 via-indigo-100 to-blue-200
+      dark:from-sky-900 dark:via-indigo-900 dark:to-blue-900
+    `,
+    text: "text-slate-800 dark:text-indigo-100",
+    border: "border-indigo-300 dark:border-blue-700"
+  },
+
+  flute: {
+    bg: `
+      from-cyan-100 via-sky-100 to-blue-200
+      dark:from-cyan-900 dark:via-sky-900 dark:to-blue-900
+    `,
+    text: "text-slate-800 dark:text-cyan-100",
+    border: "border-sky-300 dark:border-blue-700"
+  },
+
+  saxophone: {
+    bg: `
+      from-sky-100 via-blue-100 to-indigo-200
+      dark:from-sky-900 dark:via-blue-900 dark:to-indigo-900
+    `,
+    text: "text-slate-800 dark:text-sky-100",
+    border: "border-blue-300 dark:border-indigo-700"
+  },
+
+  trumpet: {
+    bg: `
+      from-blue-100 via-indigo-100 to-violet-200
+      dark:from-blue-900 dark:via-indigo-900 dark:to-violet-900
+    `,
+    text: "text-slate-800 dark:text-indigo-100",
+    border: "border-indigo-300 dark:border-violet-700"
+  },
+
+  harmonica: {
+    bg: `
+      from-cyan-100 via-blue-100 to-indigo-200
+      dark:from-cyan-900 dark:via-blue-900 dark:to-indigo-900
+    `,
+    text: "text-slate-800 dark:text-cyan-100",
+    border: "border-blue-300 dark:border-indigo-700"
+  },
+
+  drums: {
+    bg: `
+      from-indigo-100 via-purple-100 to-violet-200
+      dark:from-indigo-900 dark:via-purple-900 dark:to-violet-900
+    `,
+    text: "text-slate-800 dark:text-purple-100",
+    border: "border-purple-300 dark:border-violet-700"
+  },
+
+  xylophone: {
+    bg: `
+      from-blue-100 via-violet-100 to-indigo-200
+      dark:from-blue-900 dark:via-violet-900 dark:to-indigo-900
+    `,
+    text: "text-slate-800 dark:text-violet-100",
+    border: "border-violet-300 dark:border-indigo-700"
+  },
+
+  piano: {
+    bg: `
+      from-indigo-100 via-violet-100 to-purple-200
+      dark:from-indigo-900 dark:via-violet-900 dark:to-purple-900
+    `,
+    text: "text-slate-800 dark:text-violet-100",
+    border: "border-violet-300 dark:border-purple-700"
+  },
+
+  kalimba: {
+    bg: `
+      from-sky-100 via-blue-100 to-violet-200
+      dark:from-sky-900 dark:via-blue-900 dark:to-violet-900
+    `,
+    text: "text-slate-800 dark:text-blue-100",
+    border: "border-blue-300 dark:border-violet-700"
+  },
+
+  tabla: {
+    bg: `
+      from-cyan-100 via-sky-100 to-indigo-200
+      dark:from-cyan-900 dark:via-sky-900 dark:to-indigo-900
+    `,
+    text: "text-slate-800 dark:text-cyan-100",
+    border: "border-sky-300 dark:border-indigo-700"
+  },
+
+  theremin: {
+    bg: `
+      from-blue-100 via-indigo-100 to-purple-200
+      dark:from-blue-900 dark:via-indigo-900 dark:to-purple-900
+    `,
+    text: "text-slate-800 dark:text-indigo-100",
+    border: "border-indigo-300 dark:border-purple-700"
+  },
+
+  default: {
+    bg: `
+      from-slate-100 via-blue-100 to-indigo-200
+      dark:from-slate-900 dark:via-blue-900 dark:to-indigo-900
+    `,
+    text: "text-slate-800 dark:text-slate-100",
+    border: "border-slate-300 dark:border-slate-700"
+  }
 };
+
 
 
 
@@ -142,9 +282,7 @@ const Tutorial = () => {
 
   return (
 
-
-      
-    <div className="min-h-screen bg-white py-8 text-gray-800 relative overflow-hidden dark:bg-gray-900 dark:text-white">
+    <div className="min-h-screen py-8 relative overflow-hidden transition-colors duration-200 bg-card dark:bg-card/60 text-foreground">
       <Navbar />
     <div className="absolute inset-0 pointer-events-none overflow-hidden">
       {[...Array(15)].map((_, i) => (
@@ -159,7 +297,7 @@ const Tutorial = () => {
           }}
         >
           <Music 
-            className="text-violet-500" 
+            className="text-primary/70" 
             style={{ 
               transform: `rotate(${Math.random() * 360}deg)`,
               width: `${20 + Math.random() * 30}px`,
@@ -179,23 +317,23 @@ const Tutorial = () => {
           </Link>
           
           {showWelcomeAnimation && (
-            <div className="animate-fade-in flex items-center bg-soft-500 rounded-full px-4 py-2 shadow-md">
-              <Sparkles className="h-5 w-5 text-violet-900 mr-2" />
-              <span className="text-sm font-medium text-purple-500">Welcome to our instrument tutorials!</span>
+            <div className="animate-fade-in flex items-center bg-card/10 dark:bg-card/20 rounded-full px-4 py-2 shadow-md transition-colors">
+              <Sparkles className="h-5 w-5 text-primary mr-2" />
+              <span className="text-sm font-medium text-primary">Welcome to our instrument tutorials!</span>
             </div>
           )}
         </div> 
 
         <div className="mb-10 text-center">
-          <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-violet-800 to-light bg-clip-text text-transparent animate-fade-in">
+          <h1 className="text-4xl md:text-5xl font-bold mb-4 text-foreground animate-fade-in">
             Tutorial Guide
           </h1>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto mb-8 animate-fade-in">
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-8 animate-fade-in">
           Unlock the world of music with in-depth tutorials for various instruments, tailored for beginners to pros.
           </p>
             <motion.div
   initial={{ opacity: 0, y: -8 }}   animate={{ opacity: 1, y: 0 }}
-  className="bg-gradient-to-br from-[#F1F0FB] via-white to-[#E5DEFF] border-b-2 border-violet-500 animate-fade-in dark:border-white dark:text-white dark:bg-[#1e1e2f] shadow-md rounded-xl p-4 mb-6 transition-all duration-300"
+  className="bg-gradient-to-br from-primary/10 via-accent/5 to-primary/10 border-b-2 border-primary/20 animate-fade-in dark:from-primary/20 dark:via-accent/10 dark:to-primary/20 shadow-md rounded-xl p-4 mb-6 transition-all duration-300"
 >
             <div className="flex items-start">
               <HeartHandshake className="h-8 w-8 text-violet-500 mr-3 mt-1 flex-shrink-0" />
@@ -211,12 +349,12 @@ const Tutorial = () => {
             <div className="w-full max-w-xs">
               <Select onValueChange={handleInstrumentSelect}>
                 <SelectTrigger 
-                  className={`border ${selectedInstrument ? getInstrumentColor(selectedInstrument).border || 'border-soft' : 'border-gray-300'} 
-                  bg-white text-gray-800 w-full shadow-sm`}
+                    className={`border ${selectedInstrument ? getInstrumentColor(selectedInstrument).border || 'border-soft' : 'border-border/50'} 
+                    bg-card dark:bg-card/60 text-foreground w-full shadow-sm transition-colors duration-200`}
                 >
                   <SelectValue placeholder="Select an instrument" />
                 </SelectTrigger>
-                <SelectContent className="bg-white border-gray-200 text-gray-800">
+                  <SelectContent className="bg-card dark:bg-card/60 border-border/50 text-foreground">
                   {instrumentTutorials.map((instrument) => (
                     <SelectItem 
                       key={instrument.id} 
@@ -289,7 +427,7 @@ const Tutorial = () => {
                     <CardContent className="pb-6">
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <div >
-                        <div className="rounded-md overflow-hidden h-64 bg-white/30 shadow-sm group">
+                          <div className="rounded-md overflow-hidden h-64 bg-card/10 dark:bg-card/20 shadow-sm group">
                           <img 
                             src={instrument.image + "?w=800&h=500&fit=crop&crop=entropy&auto=compress"} 
                             alt={instrument.name} 
@@ -320,7 +458,7 @@ const Tutorial = () => {
                                 <h4 className={`text-lg font-medium ${getInstrumentColor(instrument.id).text}`}>{step.title}</h4>
                                 <p className="text-gray-600 text-sm">{step.description}</p>
                                 {step.image && (
-                                  <div className="mt-2 h-32 rounded-md overflow-hidden bg-white/20 shadow-sm">
+                                  <div className="mt-2 h-32 rounded-md overflow-hidden bg-card/10 dark:bg-card/20 shadow-sm">
                                     <img 
                                       src={step.image + "?w=600&h=300&fit=crop&auto=compress"} 
                                       alt={step.title} 
@@ -344,7 +482,7 @@ const Tutorial = () => {
                     </CardContent>
                   </CollapsibleContent>
                   
-                  <CardFooter className={`bg-${getInstrumentColor(instrument.id).bg.split(" ")[0].replace("from-", "")} border-t ${getInstrumentColor(instrument.id).border} py-3`}>
+                  <CardFooter className={`border-t ${getInstrumentColor(instrument.id).border} py-3 bg-transparent` }>
                     <Link to={`/${instrument.id}`}>
                       <Button className="bg-violet-500 hover:bg-purple-600 text-white transition-colors duration-300 shadow-sm hover:shadow-md">
                         Play {instrument.name}
@@ -359,7 +497,7 @@ const Tutorial = () => {
 
           {/* Tutorial Components */}
         <PianoTutorial isOpen={tutorialStates.piano} onClose={() => closeTutorial('piano')} />
-      \<ViolinTutorial isOpen={tutorialStates.violin} onClose={() => closeTutorial('violin')} />
+        <ViolinTutorial isOpen={tutorialStates.violin} onClose={() => closeTutorial('violin')} />
         <GuitarTutorial isOpen={tutorialStates.guitar} onClose={() => closeTutorial('guitar')} />
         <HarpTutorial isOpen={tutorialStates.harp} onClose={() => closeTutorial('harp')} />
         <SitarTutorial isOpen={tutorialStates.sitar} onClose={() => closeTutorial('sitar')} />

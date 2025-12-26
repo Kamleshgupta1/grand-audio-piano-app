@@ -214,7 +214,7 @@ const RoomInstrument: React.FC = () => {
   return (
     <div className="flex flex-col h-full" onClick={handleUserInteraction}>
       {/* Audio sharing controls */}
-      <div className="flex items-center justify-between gap-2 mb-2 text-xs bg-gray-50 dark:bg-gray-800 p-2 rounded-lg">
+      <div className="flex items-center justify-between gap-2 mb-2 text-xs bg-muted/20 dark:bg-muted/60 p-2 rounded-lg">
         <div className="flex items-center gap-2">
           <div className={`flex items-center gap-1 ${isAudioSharing ? 'text-green-600' : 'text-gray-500'}`}>
             <Volume2 className="h-3 w-3" />
@@ -283,7 +283,7 @@ const RoomInstrument: React.FC = () => {
       </div>
 
       {isAudioSharing && (
-        <div className="text-xs text-blue-600 mb-2 flex items-center gap-1 bg-blue-50 dark:bg-blue-900/20 p-2 rounded">
+        <div className="text-xs text-primary mb-2 flex items-center gap-1 bg-primary/10 dark:bg-primary/20 p-2 rounded">
           <Mic className="h-3 w-3" />
           Your instrument sounds are being shared with {activeParticipants} participant(s)
           {connectedPeers > 0 && (

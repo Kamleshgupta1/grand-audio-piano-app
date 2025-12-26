@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
+import { useTheme } from '@/contexts/ThemeContext';
 import { HelpCircle, Search, Mail, ChevronDown, ChevronUp, Music, Keyboard, Mic, Users, Volume2, Smartphone, Settings, Headphones } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -73,7 +74,7 @@ const Help = () => {
       heroSubtitle="Find answers to common questions or reach out to our support team for assistance."
       heroIcon={HelpCircle}
     >
-      <div className="max-w-4xl mx-auto">
+      <div className="container mx-auto px-4 max-w-4xl space-y-8 transition-colors duration-200">
         {/* Search Bar */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -81,10 +82,10 @@ const Help = () => {
           className="mb-10 relative max-w-lg mx-auto"
         >
           <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground" size={20} />
-          <Input
+            <Input
             type="text"
             placeholder="Search for answers..."
-            className="pl-12 py-6 text-base bg-card dark:bg-card/60 border-border/50 focus:border-primary/50 rounded-xl"
+              className="pl-12 py-5 md:py-6 text-base md:text-lg bg-card dark:bg-card/60 border-border/50 focus:border-primary/50 rounded-xl transition-colors duration-200"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -97,7 +98,7 @@ const Help = () => {
           transition={{ delay: 0.1 }}
           className="mb-12"
         >
-          <h2 className="text-xl md:text-2xl font-semibold text-foreground mb-6">
+          <h2 className="text-xl md:text-2xl font-semibold text-foreground mb-6 transition-colors duration-200">
             Frequently Asked Questions
           </h2>
 

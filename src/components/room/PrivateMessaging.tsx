@@ -109,7 +109,7 @@ const PrivateMessaging: React.FC = () => {
                       rounded-lg p-3 
                       ${isCurrentUser 
                         ? 'bg-primary text-primary-foreground' 
-                        : 'bg-muted'
+                        : 'bg-card/60 dark:bg-card/50'
                       }
                     `}>
                       <div className="flex justify-between items-center mb-1">

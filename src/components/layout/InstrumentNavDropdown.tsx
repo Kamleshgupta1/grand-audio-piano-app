@@ -110,17 +110,43 @@ const InstrumentNavDropdown = () => {
          <Link to={category.path}> 
            <DropdownMenuItem
              className={`justify-between m-3 px-4 py-2 rounded-md bg-gradient-to-r transition-all duration-300 ease-in-out cursor-pointer
-               ${
-                 category.name.includes("String")
-                   ? "from-rose-100 to-rose-200 text-rose-900 hover:from-rose-200 hover:to-rose-300"
-                   : category.name.includes("Wind")
-                   ? "from-sky-100 to-sky-200 text-sky-900 hover:from-sky-200 hover:to-sky-300"
-                   : category.name.includes("Keyboard")
-                   ? "from-emerald-100 to-emerald-200 text-emerald-900 hover:from-emerald-200 hover:to-emerald-300"
-                   : category.name.includes("Percussion")
-                   ? "from-yellow-100 to-yellow-200 text-yellow-900 hover:from-yellow-200 hover:to-yellow-300"
-                   : "from-purple-100 to-purple-200 text-purple-900 hover:from-purple-200 hover:to-purple-300"
-               }
+              ${
+  category.name.includes("String")
+    ? `
+      from-sky-100 via-blue-100 to-indigo-200 text-slate-900
+      hover:from-sky-200 hover:via-blue-200 hover:to-indigo-300
+      dark:from-indigo-900 dark:via-blue-900 dark:to-slate-900 dark:text-indigo-100
+      dark:hover:from-indigo-800 dark:hover:via-blue-800 dark:hover:to-slate-800
+    `
+    : category.name.includes("Wind")
+    ? `
+      from-cyan-100 via-sky-100 to-blue-200 text-slate-900
+      hover:from-cyan-200 hover:via-sky-200 hover:to-blue-300
+      dark:from-cyan-900 dark:via-sky-900 dark:to-blue-900 dark:text-cyan-100
+      dark:hover:from-cyan-800 dark:hover:via-sky-800 dark:hover:to-blue-800
+    `
+    : category.name.includes("Keyboard")
+    ? `
+      from-blue-100 via-indigo-100 to-violet-200 text-slate-900
+      hover:from-blue-200 hover:via-indigo-200 hover:to-violet-300
+      dark:from-blue-900 dark:via-indigo-900 dark:to-violet-900 dark:text-violet-100
+      dark:hover:from-blue-800 dark:hover:via-indigo-800 dark:hover:to-violet-800
+    `
+    : category.name.includes("Percussion")
+    ? `
+      from-indigo-100 via-purple-100 to-violet-200 text-slate-900
+      hover:from-indigo-200 hover:via-purple-200 hover:to-violet-300
+      dark:from-indigo-900 dark:via-purple-900 dark:to-violet-900 dark:text-purple-100
+      dark:hover:from-indigo-800 dark:hover:via-purple-800 dark:hover:to-violet-800
+    `
+    : `
+      from-blue-100 via-violet-100 to-purple-200 text-slate-900
+      hover:from-blue-200 hover:via-violet-200 hover:to-purple-300
+      dark:from-blue-900 dark:via-violet-900 dark:to-purple-900 dark:text-purple-100
+      dark:hover:from-blue-800 dark:hover:via-violet-800 dark:hover:to-purple-800
+    `
+}
+
              `}
            >
              {category.name}

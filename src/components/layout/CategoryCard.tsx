@@ -28,37 +28,165 @@ const CategoryCard = ({ title, description, icon, to, color, icon2, imageUrl, id
   const instruments = id && categoryData[id as keyof typeof categoryData]?.instruments;
 
   // Create a mapping of instrument types to colors and icons
-  const instrumentStyles: Record<string, { color: string, icon: string }> = {
+const instrumentStyles: Record<string, { color: string; icon: string }> = {
 
-    // 🎻 String Instruments (Yellow/Amber)
-    Violin: { color: 'bg-amber-50 text-amber-700 hover:bg-amber-100', icon: '🎻' },
-    Guitar: { color: 'bg-yellow-50 text-yellow-700 hover:bg-yellow-100', icon: '🎸' },
-    Harp: { color: 'bg-amber-50 text-amber-700 hover:bg-amber-100', icon: '🎼' },
-    Sitar: { color: 'bg-orange-50 text-orange-700 hover:bg-orange-100', icon: '🪕' },
-    Veena: { color: 'bg-orange-50 text-orange-700 hover:bg-orange-100', icon: '🪕' },
-    Banjo: { color: 'bg-yellow-50 text-yellow-700 hover:bg-yellow-100', icon: '🪕' },
+  // 🎻 String Instruments (Sky → Blue → Indigo)
+  Violin: {
+    color: `
+      bg-gradient-to-r from-sky-50 via-blue-50 to-indigo-100 text-slate-800
+      hover:from-sky-100 hover:via-blue-100 hover:to-indigo-200
+      dark:from-indigo-900 dark:via-blue-900 dark:to-slate-900 dark:text-indigo-100
+      dark:hover:from-indigo-800 dark:hover:via-blue-800 dark:hover:to-slate-800
+    `,
+    icon: '🎻'
+  },
+  Guitar: {
+    color: `
+      bg-gradient-to-r from-blue-50 via-indigo-50 to-violet-100 text-slate-800
+      hover:from-blue-100 hover:via-indigo-100 hover:to-violet-200
+      dark:from-blue-900 dark:via-indigo-900 dark:to-violet-900 dark:text-violet-100
+      dark:hover:from-blue-800 dark:hover:via-indigo-800 dark:hover:to-violet-800
+    `,
+    icon: '🎸'
+  },
+  Harp: {
+    color: `
+      bg-gradient-to-r from-sky-50 via-cyan-50 to-blue-100 text-slate-800
+      hover:from-sky-100 hover:via-cyan-100 hover:to-blue-200
+      dark:from-sky-900 dark:via-cyan-900 dark:to-blue-900 dark:text-cyan-100
+      dark:hover:from-sky-800 dark:hover:via-cyan-800 dark:hover:to-blue-800
+    `,
+    icon: '🎼'
+  },
+  Sitar: {
+    color: `
+      bg-gradient-to-r from-indigo-50 via-purple-50 to-violet-100 text-slate-800
+      hover:from-indigo-100 hover:via-purple-100 hover:to-violet-200
+      dark:from-indigo-900 dark:via-purple-900 dark:to-violet-900 dark:text-purple-100
+      dark:hover:from-indigo-800 dark:hover:via-purple-800 dark:hover:to-violet-800
+    `,
+    icon: '🪕'
+  },
+  Veena: {
+    color: `
+      bg-gradient-to-r from-blue-50 via-violet-50 to-purple-100 text-slate-800
+      hover:from-blue-100 hover:via-violet-100 hover:to-purple-200
+      dark:from-blue-900 dark:via-violet-900 dark:to-purple-900 dark:text-purple-100
+      dark:hover:from-blue-800 dark:hover:via-violet-800 dark:hover:to-purple-800
+    `,
+    icon: '🪕'
+  },
+  Banjo: {
+    color: `
+      bg-gradient-to-r from-sky-50 via-indigo-50 to-blue-100 text-slate-800
+      hover:from-sky-100 hover:via-indigo-100 hover:to-blue-200
+      dark:from-sky-900 dark:via-indigo-900 dark:to-blue-900 dark:text-indigo-100
+      dark:hover:from-sky-800 dark:hover:via-indigo-800 dark:hover:to-blue-800
+    `,
+    icon: '🪕'
+  },
 
-    // 🎷 Wind Instruments (Blue)
-    Flute: { color: 'bg-blue-50 text-blue-700 hover:bg-blue-100', icon: '🎶' },
-    Saxophone: { color: 'bg-sky-50 text-sky-700 hover:bg-sky-100', icon: '🎷' },
-    Trumpet: { color: 'bg-indigo-50 text-indigo-700 hover:bg-indigo-100', icon: '🎺' },
-    Harmonica: { color: 'bg-cyan-50 text-cyan-700 hover:bg-cyan-100', icon: '🎼' },
+  // 🎷 Wind Instruments (Ocean → Sky → Blue)
+  Flute: {
+    color: `
+      bg-gradient-to-r from-cyan-50 via-sky-50 to-blue-100 text-slate-800
+      hover:from-cyan-100 hover:via-sky-100 hover:to-blue-200
+      dark:from-cyan-900 dark:via-sky-900 dark:to-blue-900 dark:text-cyan-100
+      dark:hover:from-cyan-800 dark:hover:via-sky-800 dark:hover:to-blue-800
+    `,
+    icon: '🎶'
+  },
+  Saxophone: {
+    color: `
+      bg-gradient-to-r from-sky-50 via-blue-50 to-indigo-100 text-slate-800
+      hover:from-sky-100 hover:via-blue-100 hover:to-indigo-200
+      dark:from-sky-900 dark:via-blue-900 dark:to-indigo-900 dark:text-sky-100
+      dark:hover:from-sky-800 dark:hover:via-blue-800 dark:hover:to-indigo-800
+    `,
+    icon: '🎷'
+  },
+  Trumpet: {
+    color: `
+      bg-gradient-to-r from-blue-50 via-indigo-50 to-violet-100 text-slate-800
+      hover:from-blue-100 hover:via-indigo-100 hover:to-violet-200
+      dark:from-blue-900 dark:via-indigo-900 dark:to-violet-900 dark:text-indigo-100
+      dark:hover:from-blue-800 dark:hover:via-indigo-800 dark:hover:to-violet-800
+    `,
+    icon: '🎺'
+  },
+  Harmonica: {
+    color: `
+      bg-gradient-to-r from-cyan-50 via-blue-50 to-indigo-100 text-slate-800
+      hover:from-cyan-100 hover:via-blue-100 hover:to-indigo-200
+      dark:from-cyan-900 dark:via-blue-900 dark:to-indigo-900 dark:text-cyan-100
+      dark:hover:from-cyan-800 dark:hover:via-blue-800 dark:hover:to-indigo-800
+    `,
+    icon: '🎵'
+  },
 
-    // 🥁 Percussion Instruments (Red/Pink)
-    DrumKit: { color: 'bg-red-50 text-red-700 hover:bg-red-100', icon: '🥁' },
-    Xylophone: { color: 'bg-rose-50 text-rose-700 hover:bg-rose-100', icon: '🛎️' },
+  // 🥁 Percussion (Indigo → Purple → Violet)
+  DrumKit: {
+    color: `
+      bg-gradient-to-r from-indigo-50 via-purple-50 to-violet-100 text-slate-800
+      hover:from-indigo-100 hover:via-purple-100 hover:to-violet-200
+      dark:from-indigo-900 dark:via-purple-900 dark:to-violet-900 dark:text-purple-100
+      dark:hover:from-indigo-800 dark:hover:via-purple-800 dark:hover:to-violet-800
+    `,
+    icon: '🥁'
+  },
+  Xylophone: {
+    color: `
+      bg-gradient-to-r from-blue-50 via-violet-50 to-indigo-100 text-slate-800
+      hover:from-blue-100 hover:via-violet-100 hover:to-indigo-200
+      dark:from-blue-900 dark:via-violet-900 dark:to-indigo-900 dark:text-violet-100
+      dark:hover:from-blue-800 dark:hover:via-violet-800 dark:hover:to-indigo-800
+    `,
+    icon: '🪘'
+  },
 
-    // 🎹 Keyboard / Electronic Instruments (Purple/Violet)
-    GrandPiano: { color: 'bg-purple-50 text-purple-700 hover:bg-purple-100', icon: '🎹' },
-    Theremin: { color: 'bg-violet-50 text-violet-700 hover:bg-violet-100', icon: '📡' },
-    DrumMachine: { color: 'bg-fuchsia-50 text-fuchsia-700 hover:bg-fuchsia-100', icon: '🎛️' },
-    ChordProgression: { color: 'bg-lime-50 text-lime-700 hover:bg-lime-100', icon: '🎧' },
-
+  // 🎹 Keyboard / Electronic (Navy → Violet → Purple)
+  GrandPiano: {
+    color: `
+      bg-gradient-to-r from-indigo-50 via-violet-50 to-purple-100 text-slate-800
+      hover:from-indigo-100 hover:via-violet-100 hover:to-purple-200
+      dark:from-indigo-900 dark:via-violet-900 dark:to-purple-900 dark:text-violet-100
+      dark:hover:from-indigo-800 dark:hover:via-violet-800 dark:hover:to-purple-800
+    `,
+    icon: '🎹'
+  },
+  Theremin: {
+    color: `
+      bg-gradient-to-r from-blue-50 via-indigo-50 to-violet-100 text-slate-800
+      hover:from-blue-100 hover:via-indigo-100 hover:to-violet-200
+      dark:from-blue-900 dark:via-indigo-900 dark:to-violet-900 dark:text-indigo-100
+      dark:hover:from-blue-800 dark:hover:via-indigo-800 dark:hover:to-violet-800
+    `,
+    icon: '📡'
+  },
+  DrumMachine: {
+    color: `
+      bg-gradient-to-r from-indigo-50 via-purple-50 to-blue-100 text-slate-800
+      hover:from-indigo-100 hover:via-purple-100 hover:to-blue-200
+      dark:from-indigo-900 dark:via-purple-900 dark:to-blue-900 dark:text-purple-100
+      dark:hover:from-indigo-800 dark:hover:via-purple-800 dark:hover:to-blue-800
+    `,
+    icon: '🎛️'
+  },
+  ChordProgression: {
+    color: `
+      bg-gradient-to-r from-sky-50 via-blue-50 to-violet-100 text-slate-800
+      hover:from-sky-100 hover:via-blue-100 hover:to-violet-200
+      dark:from-sky-900 dark:via-blue-900 dark:to-violet-900 dark:text-blue-100
+      dark:hover:from-sky-800 dark:hover:via-blue-800 dark:hover:to-violet-800
+    `,
+    icon: '🎧'
+  }
 };
 
-return (
-  <Link to={to} className="block group">
-    <article className="rounded-2xl overflow-hidden bg-card shadow-md hover:shadow-xl transition-all duration-500 interactive-element relative border border-border/50">
+
+  return (
+  <Link to={to} className="block group" aria-label={`Browse ${title} category`}>
+    <article role="article" tabIndex={0} className="rounded-2xl overflow-hidden bg-card shadow-md transition-transform duration-300 transform-gpu group-hover:-translate-y-1 group-hover:scale-[1.02] hover:shadow-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/60 relative border border-border/50">
       {instruments && instruments.length > 0 && (
         <div className="absolute top-2 right-2 z-30">
           <TooltipProvider>
@@ -66,13 +194,24 @@ return (
               <TooltipTrigger asChild>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="outline" size="icon" className="rounded-full bg-white/80 backdrop-blur-sm hover:bg-white">
-                      <ChevronDown className="h-4 w-4" />
-                    </Button>
+                   <Button
+  variant="outline"
+  size="icon"
+  aria-label={`Browse ${title} instruments`}
+  aria-haspopup="menu"
+  className="
+    rounded-full
+    bg-gradient-to-r from-primary to-secondary text-white font-bold transition-all duration-300 hover:shadow-lg hover:shadow-primary/50 hover:scale-105
+
+  "
+>
+  <ChevronDown className="h-4 w-4 transition-transform duration-300 group-hover:rotate-180" />
+</Button>
+
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-48 p-2">
                     {instruments.map(instrument => (
-                      <DropdownMenuItem key={instrument.id} asChild className={instrumentStyles[instrument.name]?.color || "bg-gray-50 text-gray-700 hover:bg-gray-100"}>
+                      <DropdownMenuItem key={instrument.id} asChild className={instrumentStyles[instrument.name]?.color || "bg-gray-50 text-gray-700 hover:bg-gray-100 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"}>
                         <Link to={`/${instrument.id}`} className="flex items-center gap-2 cursor-pointer  mt-1 mb-1">
                           <span className="text-lg">
                             {instrumentStyles[instrument.name]?.icon || '🎵'}
@@ -92,7 +231,7 @@ return (
         </div>
       )}
 
-      <div className="relative h-48 overflow-hidden">
+      <div className="relative h-56 md:h-60 overflow-hidden">
         <div className="relative w-full h-full rounded-xl overflow-hidden">
           {imageUrl ? (
             <>
@@ -100,7 +239,7 @@ return (
               <img
                 src={imageUrl}
                 alt={`${title} - Browse ${title.toLowerCase()}`}
-                className="absolute inset-0 w-full h-full object-cover object-center transform group-hover:scale-110 transition-transform duration-700"
+                className="absolute inset-0 w-full h-full object-cover object-center transform group-hover:scale-105 transition-transform duration-500 will-change-transform"
                 loading="lazy"
               />
             </>
@@ -110,27 +249,27 @@ return (
             </div>
           )}
 
-          <div className="absolute bottom-0 p-6 w-full z-20 bg-gradient-to-t from-black/70 via-black/40 to-transparent">
-            <h3 className="text-xl font-bold text-white group-hover:scale-105 transition-transform duration-300">
+            <div className="absolute bottom-0 px-6 py-4 w-full z-20 bg-gradient-to-t from-black/60 via-black/30 to-transparent dark:from-black/40 dark:via-black/10">
+              <h3 className="text-lg md:text-xl font-semibold text-white group-hover:scale-105 transition-transform duration-300">
               {title}
             </h3>
           </div>
         </div>
       </div>
-      <div className="p-6">
+        <div className="p-4 md:p-6">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-300 group-hover:scale-110">
+            <div className="w-14 h-14 rounded-xl bg-primary/10 dark:bg-primary/20 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-transform duration-300 group-hover:scale-105 text-xl">
               {icon}
             </div>
             <div>
-              <h3 className="text-lg font-bold text-card-foreground group-hover:text-primary transition-colors duration-300">
+              <h3 className="text-base md:text-lg font-semibold text-foreground group-hover:text-primary transition-colors duration-300">
                 {title}
               </h3>
-              <p className="text-sm text-muted-foreground mt-1">{description}</p>
+              <p className="text-sm md:text-base text-muted-foreground mt-1">{description}</p>
             </div>
           </div>
-          <ChevronRight className="text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all duration-300" size={20} />
+          <ChevronRight className="text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-transform duration-300" size={20} aria-hidden />
         </div>
       </div>
     </article>

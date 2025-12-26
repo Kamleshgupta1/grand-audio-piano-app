@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import AppLayout from '@/components/layout/AppLayout';
 import SectionTitle from '@/components/ui-components/SectionTitle';
 import InstrumentCard from '@/components/layout/InstrumentCard';
@@ -12,6 +12,8 @@ import {
   SelectValue
 } from '@/components/ui/select';
 import { Search } from 'lucide-react';
+import { useTheme } from '@/contexts/ThemeContext';
+
 
 const allInstruments = [
   {
@@ -147,36 +149,49 @@ const sortOptions = [
 
 const Explore = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [sortBy, setSortBy] = useState('name_asc');
-  
-  const filteredInstruments = allInstruments
-    .filter((instrument) => {
-      const matchesSearch = instrument.name.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesCategory = selectedCategory === 'all' || 
-        instrument.category.toLowerCase() === selectedCategory.toLowerCase();
-      return matchesSearch && matchesCategory;
-    })
-    .sort((a, b) => {
-      if (sortBy === 'name_asc') {
-        return a.name.localeCompare(b.name);
-      } else {
+
+  // Debounce search input for better UX and performance
+  useEffect(() => {
+    setIsSearching(true);
+    const t = setTimeout(() => {
+      setDebouncedSearch(searchTerm.trim());
+      setIsSearching(false);
+    }, 300);
+    return () => clearTimeout(t);
+  }, [searchTerm]);
+
+  const filteredInstruments = useMemo(() => {
+    const filtered = allInstruments
+      .filter((instrument) => {
+        const matchesSearch = instrument.name.toLowerCase().includes(debouncedSearch.toLowerCase());
+        const matchesCategory = selectedCategory === 'all' ||
+          instrument.category.toLowerCase() === selectedCategory.toLowerCase();
+        return matchesSearch && matchesCategory;
+      })
+      .sort((a, b) => {
+        if (sortBy === 'name_asc') return a.name.localeCompare(b.name);
         return b.name.localeCompare(a.name);
-      }
-    });
+      });
+    return filtered;
+  }, [debouncedSearch, selectedCategory, sortBy]);
   
   return (
     <AppLayout>
-      <div className="container mx-auto px-6 py-20">
+      
+      <div className="container mx-auto px-4 sm:px-6 py-12 sm:py-16">
         <SectionTitle 
           title="Explore Instruments"
           subtitle="Browse through our extensive collection of musical instruments"
         />
         
-        <div className="bg-white rounded-xl shadow-sm p-6 mb-10">
+        <div className="bg-card dark:bg-card/60 rounded-xl shadow-sm p-4 sm:p-6 mb-10 transition-colors duration-200">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" size={18} />
               <Input
                 type="text"
                 placeholder="Search instruments..."
@@ -220,8 +235,18 @@ const Explore = () => {
           </div>
         </div>
         
-        {filteredInstruments.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        {isSearching ? (
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className="animate-pulse p-2">
+                  <div className="h-36 bg-muted/30 dark:bg-muted/50 rounded-lg mb-3" />
+                  <div className="h-4 bg-muted/30 dark:bg-muted/50 rounded w-3/4 mb-2" />
+                  <div className="h-3 bg-muted/30 dark:bg-muted/50 rounded w-1/2" />
+                </div>
+              ))}
+          </div>
+        ) : filteredInstruments.length > 0 ? (
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {filteredInstruments.map((instrument) => (
               <InstrumentCard 
                 key={instrument.id}
@@ -233,8 +258,8 @@ const Explore = () => {
             ))}
           </div>
         ) : (
-          <div className="text-center py-20">
-            <p className="text-lg text-gray-500">No instruments found matching your criteria.</p>
+          <div className="text-center py-12">
+            <p className="text-lg text-muted-foreground">No instruments found matching your criteria.</p>
           </div>
         )}
       </div>

@@ -174,8 +174,8 @@ const CategoryPage = () => {
   if (!categoryId || !categoryData[categoryId as keyof typeof categoryData]) {
     return (
       <AppLayout>
-        <div className="container mx-auto px-6 py-20">
-          <h1>Category not found</h1>
+        <div className="container mx-auto px-4 sm:px-6 py-12 sm:py-16">
+          <h1 className="text-2xl font-bold text-foreground">Category not found</h1>
         </div>
       </AppLayout>
     );
@@ -185,7 +185,7 @@ const CategoryPage = () => {
   
   return (
     <AppLayout>
-      <div className="container mx-auto px-6 py-20">
+      <div className="container mx-auto px-4 sm:px-6 py-12 sm:py-16">
         <SectionTitle 
           title={category.title}
           subtitle={category.description}

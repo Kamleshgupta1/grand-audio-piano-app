@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { UserButton } from '../auth/UserButton';
 import { Button } from '@/components/ui/button';
@@ -29,6 +29,15 @@ const Navbar = () => {
     }
   });
 
+   // Close mobile menu on Escape for keyboard accessibility
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMobileMenuOpen(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
   function getPreviousPage() {
     const path = location.pathname;
     if (path === '/explore') return '/';
@@ -52,15 +61,15 @@ const Navbar = () => {
     { name: 'Explore', path: '/explore' },
     { name: 'Categories', path: '/categories' },
     { name: 'Play with friends', path: '/music-rooms' },
-    { name: 'Tutorial', path: '/tutorial' },
-    { name: 'Blog', path: '/blog' },
+    // { name: 'Tutorial', path: '/tutorial' },
+    // { name: 'Blog', path: '/blog' },
     { name: 'Play', path: '/' },
 
   ];
 
   return (
-    <header className={`fixed top-0 left-0 right-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg border-b border-gray-100 dark:border-gray-800 transition-colors duration-300`}>
-      <nav className="container mx-auto px-6 py-4 flex items-center justify-between">
+    <header role="navigation" aria-label="Main navigation" className={`fixed top-0 left-0 right-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg border-b border-gray-100 dark:border-gray-800 transition-colors duration-300`}>
+      <nav className="container mx-auto px-3 sm:px-6 py-2 sm:py-4 flex items-center justify-between">
         {/* Navigation arrows for gesture nav visual feedback */}
         {/* <div className="hidden md:flex items-center gap-2">
           {getPreviousPage() && (
@@ -75,14 +84,14 @@ const Navbar = () => {
           )}
         </div> */}
 
-        <Link to="/" className="flex items-center gap-2">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-gray-900 to-gray-700 dark:from-gray-700 dark:to-gray-500 flex items-center justify-center text-white font-semibold animate-pulse-gentle">
+        <Link to="/" className="flex items-center gap-3 group">
+          <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-gradient-to-br from-indigo-600 to-indigo-400 dark:from-indigo-500 dark:to-indigo-300 flex items-center justify-center text-white font-bold text-base sm:text-lg shadow-lg dark:shadow-indigo-500/30 group-hover:shadow-xl dark:group-hover:shadow-indigo-500/50 group-hover:scale-110 transition-all duration-300 ease-out">
             H
           </div>
-          <span className="text-xl font-semibold">HarmonyHub</span>
+          <span className="text-lg sm:text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400 bg-clip-text text-transparent group-hover:from-indigo-700 dark:group-hover:from-indigo-300 group-hover:to-purple-700 dark:group-hover:to-purple-300 transition-all duration-300">HarmonyHub</span>
         </Link>
 
-        <div className="hidden md:flex items-center gap-8">
+        <div className="hidden md:flex items-center gap-6">
           {navLinks.map((link) => {
             //  if (link.name === 'Play with friends') {
             //   return null; // ✅ Skip rendering
@@ -101,7 +110,7 @@ const Navbar = () => {
               <Link
                 key={link.path}
                 to={link.path}
-                className={`nav-link ${isActive(link.path) ? 'font-medium' : ''} dark:text-white`}
+                className={`nav-link px-1 py-1 text-sm transition-colors duration-200 focus:outline-none ${isActive(link.path) ? 'text-indigo-600 dark:text-indigo-400 font-medium' : 'text-gray-800 dark:text-gray-200 hover:text-indigo-600 dark:hover:text-indigo-400'}`}
               >
                 {link.name}
               </Link>
@@ -110,7 +119,7 @@ const Navbar = () => {
         </div>
 
 
-        <div className="hidden md:flex items-center gap-1">
+        <div className="hidden md:flex items-center gap-3 sm:gap-4">
           <ThemeSwitcher />
           {/* onClick={() => toast.info('Feature not available yet!')} */}
           {/* <div className="ml-2 gap-4" >
@@ -132,6 +141,9 @@ const Navbar = () => {
         <div className="flex items-center gap-2 md:hidden">
           <ThemeSwitcher />
           <button
+            aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+            aria-expanded={mobileMenuOpen}
+            aria-controls="mobile-menu"
             className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           >
@@ -145,8 +157,8 @@ const Navbar = () => {
 
       {/* Mobile menu */}
       {mobileMenuOpen && (
-        <div className="md:hidden bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 animate-fade-in">
-          <div className="container mx-auto px-6 py-4 flex flex-col gap-4">
+        <div id="mobile-menu" role="menu" className="md:hidden bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 animate-fade-in backdrop-blur-sm shadow-lg">
+          <div className="container mx-auto px-4 sm:px-6 py-3 sm:py-4 flex flex-col gap-3">
 
 
             {navLinks.map((link) =>
@@ -154,7 +166,8 @@ const Navbar = () => {
                 <Link
                   key={link.path}
                   to={link.path}
-                  className={`py-2 text-lg transition-colors duration-200 ${isActive(link.path)
+                  role="menuitem"
+                  className={`py-3 text-base sm:text-lg px-2 transition-colors duration-200 rounded ${isActive(link.path)
                       ? 'font-semibold text-blue-600 dark:text-blue-400'
                       : 'text-gray-800 dark:text-gray-200 hover:text-blue-500 dark:hover:text-blue-400'
                     }`}
@@ -163,9 +176,8 @@ const Navbar = () => {
                   {link.name}
                 </Link>
               ) : (
-                <div key="instrument-dropdown-mobile">
+                
                   <InstrumentNavDropdown />
-                </div>
               )
             )}
 

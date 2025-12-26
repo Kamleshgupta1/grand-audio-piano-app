@@ -102,11 +102,11 @@ const RoomHeader: React.FC = () => {
   };
 
   return (
-    <div className="p-4 bg-background border-b">
+    <div className="p-4 bg-card dark:bg-card/60 border-b border-border">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold truncate">{room.name}</h1>
+            <h1 className="text-2xl font-bold truncate text-foreground">{room.name}</h1>
             <Badge variant={room.isPublic ? "default" : "outline"}>
               {room.isPublic ? (
                 <span className="flex items-center gap-1"><Globe size={14} />Public</span>

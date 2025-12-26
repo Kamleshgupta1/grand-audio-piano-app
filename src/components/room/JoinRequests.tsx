@@ -130,7 +130,7 @@ const JoinRequests: React.FC = () => {
             {pendingUsers.map((pendingUser) => (
               <div
                 key={pendingUser.id}
-                className="flex items-center justify-between p-3 border rounded-lg"
+                className="flex items-center justify-between p-3 border border-border/50 bg-card/50 dark:bg-card/40 rounded-lg"
               >
                 <div className="flex items-center gap-3">
                   <Avatar className="h-10 w-10">
@@ -155,9 +155,8 @@ const JoinRequests: React.FC = () => {
                     size="sm"
                     variant="outline"
                     onClick={() => handleDeny(pendingUser.id)}
-                    className="text-red-600 hover:text-red-700"
                   >
-                    <UserX className="h-4 w-4 mr-1" />
+                    <UserX className="h-4 w-4 mr-1 text-destructive" />
                     Deny
                   </Button>
                   <Button

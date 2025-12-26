@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
+import { useTheme } from '@/contexts/ThemeContext';
 import { Link } from 'react-router-dom';
 import { Users, Music, Sparkles, Mail, Heart, Lightbulb, Globe, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -73,7 +74,7 @@ const About = () => {
       backgroundImageUrl="https://images.unsplash.com/photo-1511379938547-c1f69419868d?q=80&w=2070"
     >
       {/* Tab Navigation */}
-      <nav className="bg-card/80 dark:bg-card/60 backdrop-blur-md border-y border-border/50 sticky top-16 z-10 mb-8 rounded-xl shadow-sm">
+      <nav className="bg-card/80 dark:bg-card/60 backdrop-blur-md border-y border-border/50 sticky top-16 z-10 mb-8 rounded-xl shadow-sm transition-colors duration-200">
         <div className="container mx-auto px-4">
           <div className="flex overflow-x-auto scrollbar-hide py-2 gap-2 justify-center">
             {tabs.map((tab) => (
@@ -96,7 +97,7 @@ const About = () => {
         </div>
       </nav>
 
-      <div className="max-w-5xl mx-auto">
+      <div className="max-w-5xl mx-auto container px-4 transition-colors duration-200">
         {/* Our Story Section */}
         {activeTab === "story" && (
           <motion.div initial="hidden" animate="visible" variants={fadeIn} className="space-y-12">
