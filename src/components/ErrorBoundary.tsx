@@ -1,8 +1,9 @@
 
 import React, { Component, ErrorInfo, ReactNode } from 'react';
+import { Link } from "react-router-dom";
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertTriangle, RefreshCw } from 'lucide-react';
+import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
 
 interface Props {
   children: ReactNode;
@@ -88,6 +89,16 @@ class ErrorBoundary extends Component<Props, State> {
                     size="sm"
                   >
                     Refresh Page
+                  </Button>
+                  <Button 
+                    variant="default" 
+                    size="sm"
+                    className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-8 py-6 text-lg font-semibold rounded-xl transition-all duration-300 hover:scale-105 hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-indigo-400 dark:focus:ring-indigo-500"
+                  >
+                    <Link to="/">
+                      <Home className="mr-2 h-5 w-5" />
+                      Go Home
+                    </Link>
                   </Button>
                 </div>
               </div>
