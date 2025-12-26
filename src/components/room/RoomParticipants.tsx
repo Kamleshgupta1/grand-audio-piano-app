@@ -115,22 +115,18 @@ const RoomParticipants: React.FC = () => {
                 
                 {isHost && !isCurrentUser && (
                   <DropdownMenu>
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <DropdownMenuTrigger asChild>
-                            <Button size="icon" variant="ghost" className="h-6 w-6">
-                              <Settings size={14} />
-                            </Button>
-                          </DropdownMenuTrigger>
-                        </TooltipTrigger>
-                        <TooltipContent side="left">
-                          <p>Manage participant</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
+                    <DropdownMenuTrigger asChild>
+                      <Button 
+                        size="icon" 
+                        variant="ghost" 
+                        className="h-6 w-6"
+                        title="Manage participant"
+                      >
+                        <Settings size={14} />
+                      </Button>
+                    </DropdownMenuTrigger>
                     
-                    <DropdownMenuContent align="end" className="w-40">
+                    <DropdownMenuContent align="end" className="w-40 bg-popover border border-border shadow-lg z-50">
                       <DropdownMenuItem 
                         onClick={() => muteUser(participant.id, !participant.muted)}
                         className="cursor-pointer"
