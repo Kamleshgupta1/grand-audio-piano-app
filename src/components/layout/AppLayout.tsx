@@ -1,7 +1,9 @@
 import { ReactNode } from 'react';
+import { useLocation } from 'react-router-dom';
 import Navbar from './Navbar';
 import Footer from './Footer';
 import EnhancedSEO from '../SEO/EnhancedSEO';
+import Breadcrumbs from '../ui-components/Breadcrumbs';
 import instrumentSEO from '@/utils/seo/instrumentSEO';
 
 const { getInstrumentSEOData } = instrumentSEO;
@@ -15,6 +17,7 @@ interface AppLayoutProps {
   type?: 'website' | 'article' | 'music.song' | 'music.album' | 'music.playlist' | 'video.other';
   keywords?: string;
   instrumentType?: string;
+  showBreadcrumbs?: boolean;
 }
 
 const AppLayout = ({ 
@@ -25,15 +28,19 @@ const AppLayout = ({
   image,
   type = 'website',
   keywords = "virtual instruments, online music, play music, interactive instruments",
-  instrumentType
+  instrumentType,
+  showBreadcrumbs = true
 }: AppLayoutProps) => {
-  // Get instrument-specific SEO data if instrumentType is provided
-  const instrumentSEO = instrumentType ? getInstrumentSEOData(instrumentType) : null;
+  const location = useLocation();
+  const isHomePage = location.pathname === '/';
   
-  const seoTitle = instrumentSEO?.title || title;
-  const seoDescription = instrumentSEO?.description || description;
-  const seoKeywords = instrumentSEO?.keywords || keywords;
-  const structuredData = instrumentSEO?.structuredData || [];
+  // Get instrument-specific SEO data if instrumentType is provided
+  const instrumentSEOData = instrumentType ? getInstrumentSEOData(instrumentType) : null;
+  
+  const seoTitle = instrumentSEOData?.title || title;
+  const seoDescription = instrumentSEOData?.description || description;
+  const seoKeywords = instrumentSEOData?.keywords || keywords;
+  const structuredData = instrumentSEOData?.structuredData || [];
 
   return (
     <>
@@ -50,6 +57,12 @@ const AppLayout = ({
       <div className="flex flex-col min-h-screen bg-background text-foreground">
         <Navbar />
         <main className="flex-grow pt-24">
+          {/* Breadcrumbs - show on all pages except home */}
+          {showBreadcrumbs && !isHomePage && (
+            <div className="container mx-auto px-4 py-2">
+              <Breadcrumbs />
+            </div>
+          )}
           {children}
         </main>
         <Footer />
