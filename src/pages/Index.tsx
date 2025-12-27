@@ -1,8 +1,15 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import HeroSection from '@/components/ui-components/HeroSection';
 import CategoryCard from '@/components/layout/CategoryCard';
 import InstrumentCard from '@/components/layout/InstrumentCard';
+import QuickAccessPanel from '@/components/ui-components/QuickAccessPanel';
+import FloatingMusicNotes from '@/components/ui-components/FloatingMusicNotes';
+import GamificationPanel from '@/components/ui-components/GamificationPanel';
+import InstrumentComparison from '@/components/ui-components/InstrumentComparison';
+import SkeletonCard from '@/components/ui-components/SkeletonCard';
+import { useFavorites } from '@/hooks/useFavorites';
+import { useGamification } from '@/hooks/useGamification';
 
 import { Button } from '@/components/ui/button';
 import { Wind, Music2, Mic, Volume2, Piano, Guitar, Music, FileMusic, Drum, MicVocal, ArrowRight, Trophy, BadgeDollarSign, ShieldCheck, Headphones, GemIcon, Star } from 'lucide-react';
@@ -40,7 +47,6 @@ const categories = [
     to: '/categories/strings',
     color: 'bg-amber-100 dark:bg-amber-950',
     icon2: '🎻',
-    // imageUrl: 'https://images.unsplash.com/photo-1556449895-a33c9dba33dd?auto=format&fit=crop&w=600&q=80'
   },
   {
     id: 'keyboard',
@@ -50,7 +56,6 @@ const categories = [
     to: '/categories/keyboard',
     color: 'bg-blue-100 dark:bg-blue-950',
     icon2: '🎹',
-    // imageUrl: 'https://images.unsplash.com/photo-1552422535-c45813c61732?auto=format&fit=crop&w=600&q=80'
   },
   {
     id: 'percussion',
@@ -60,7 +65,6 @@ const categories = [
     to: '/categories/percussion',
     color: 'bg-red-100 dark:bg-red-950',
     icon2: '🥁',
-    // imageUrl: 'https://images.unsplash.com/photo-1519892300165-cb5542fb47c7?auto=format&fit=crop&w=600&q=80'
   },
   {
     id: 'wind',
@@ -70,7 +74,6 @@ const categories = [
     to: '/categories/wind',
     color: 'bg-purple-100 dark:bg-purple-950',
     icon2: '🎤',
-    // imageUrl: 'https://images.unsplash.com/photo-1478737270239-2f02b77fc618?auto=format&fit=crop&w=600&q=80'
   }
 ];
 
@@ -99,9 +102,26 @@ const featuredInstruments = [
 ];
 
 const Index = () => {
+  const { addToRecent } = useFavorites();
+  const { recordPractice } = useGamification();
+
+  // Track page view
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'gtag' in window) {
+      (window as any).gtag('event', 'page_view', {
+        page_title: 'HarmonyHub - Virtual Musical Instruments',
+        page_location: window.location.href,
+        page_path: window.location.pathname
+      });
+    }
+  }, []);
+
   return (
     <AppLayout>
-      <div className="min-h-screen">
+      <div className="min-h-screen relative">
+        {/* Floating Music Notes Background */}
+        <FloatingMusicNotes count={12} />
+        
         <HeroSection
           title="Discover the World of Music"
           subtitle="Explore, play, and master musical instruments from around the globe"
@@ -111,6 +131,13 @@ const Index = () => {
           secondaryCtaLink="/piano"
           imageUrl="https://images.unsplash.com/photo-1511379938547-c1f69419868d?auto=format&fit=crop&w=1920&q=80"
         />
+
+        {/* Quick Access Panel */}
+        <section className="py-8 px-4 bg-background">
+          <div className="container mx-auto">
+            <QuickAccessPanel />
+          </div>
+        </section>
 
         <section className="py-16 px-4 bg-background">
           <div className="container mx-auto">
