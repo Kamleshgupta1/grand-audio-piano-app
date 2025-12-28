@@ -132,10 +132,20 @@ const Index = () => {
           imageUrl="https://images.unsplash.com/photo-1511379938547-c1f69419868d?auto=format&fit=crop&w=1920&q=80"
         />
 
-        {/* Quick Access Panel */}
+        {/* Quick Access & Gamification Section */}
         <section className="py-8 px-4 bg-background">
           <div className="container mx-auto">
-            <QuickAccessPanel />
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Quick Access Panel - Takes 2 columns */}
+              <div className="lg:col-span-2">
+                <QuickAccessPanel />
+              </div>
+              
+              {/* Gamification Panel - Sidebar */}
+              <div className="lg:col-span-1">
+                <GamificationPanel />
+              </div>
+            </div>
           </div>
         </section>
 
