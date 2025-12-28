@@ -7,12 +7,14 @@ import {
   Star, 
   Award,
   TrendingUp,
-  X
+  X,
+  LogIn
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
-import { useGamification } from '@/hooks/useGamification';
+import { usePersistentGamification } from '@/hooks/usePersistentGamification';
+import { Link } from 'react-router-dom';
 
 interface GamificationPanelProps {
   className?: string;
@@ -32,7 +34,8 @@ const GamificationPanel: React.FC<GamificationPanelProps> = ({
     newAchievements,
     clearNewAchievements,
     getProgress,
-  } = useGamification();
+    isAuthenticated,
+  } = usePersistentGamification();
 
   const progress = getProgress();
 
