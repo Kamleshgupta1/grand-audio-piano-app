@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import StaticPageLayout from "@/components/layout/StaticPageLayout";
+import FAQSchema from "@/components/SEO/FAQSchema";
 
 const Help = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -65,6 +66,12 @@ const Help = () => {
     setOpenFaq(openFaq === index ? null : index);
   };
 
+  // Prepare FAQ data for schema
+  const faqSchemaData = faqs.map(faq => ({
+    question: faq.question,
+    answer: faq.answer
+  }));
+
   return (
     <StaticPageLayout
       title="FAQs & Support | HarmonyHub - Virtual Music Instruments"
@@ -74,6 +81,8 @@ const Help = () => {
       heroSubtitle="Find answers to common questions or reach out to our support team for assistance."
       heroIcon={HelpCircle}
     >
+      {/* FAQ Schema for SEO */}
+      <FAQSchema faqs={faqSchemaData} pageUrl="https://harmonyhub.com/help" />
       <div className="container mx-auto px-4 max-w-4xl space-y-8 transition-colors duration-200">
         {/* Search Bar */}
         <motion.div

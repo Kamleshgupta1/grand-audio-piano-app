@@ -1,7 +1,8 @@
-
+import { useEffect, useRef, useState } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { motion, useScroll, useTransform } from 'framer-motion';
 
 interface HeroSectionProps {
   title: string;
@@ -9,7 +10,7 @@ interface HeroSectionProps {
   ctaText: string;
   ctaLink: string;
   bgImageUrl?: string;
-  imageUrl?: string;  // Added to support either naming convention
+  imageUrl?: string;
   secondaryCtaText?: string;
   secondaryCtaLink?: string;
 }
@@ -24,31 +25,172 @@ const HeroSection = ({
   secondaryCtaText,
   secondaryCtaLink
 }: HeroSectionProps) => {
-  // Use either bgImageUrl or imageUrl (for backward compatibility)
   const backgroundImage = bgImageUrl || imageUrl;
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  
+  const { scrollY } = useScroll();
+  
+  // Parallax transforms for different layers
+  const backgroundY = useTransform(scrollY, [0, 500], [0, 150]);
+  const contentY = useTransform(scrollY, [0, 500], [0, -50]);
+  const orb1Y = useTransform(scrollY, [0, 500], [0, 100]);
+  const orb2Y = useTransform(scrollY, [0, 500], [0, 80]);
+  const orb3Y = useTransform(scrollY, [0, 500], [0, 120]);
+  const opacity = useTransform(scrollY, [0, 400], [1, 0.3]);
+  
+  // Handle mouse movement for interactive parallax
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!containerRef.current) return;
+      const rect = containerRef.current.getBoundingClientRect();
+      const x = (e.clientX - rect.left - rect.width / 2) / rect.width;
+      const y = (e.clientY - rect.top - rect.height / 2) / rect.height;
+      setMousePosition({ x, y });
+    };
+    
+    const container = containerRef.current;
+    container?.addEventListener('mousemove', handleMouseMove);
+    return () => container?.removeEventListener('mousemove', handleMouseMove);
+  }, []);
   
   return (
-    <section className="relative h-[50vh] md:h-[80vh] min-h-[300px] md:min-h-[600px] flex items-center overflow-hidden">
-      <div className="absolute inset-0 overflow-hidden">
-        <img 
+    <section 
+      ref={containerRef}
+      className="relative h-[50vh] md:h-[80vh] min-h-[300px] md:min-h-[600px] flex items-center overflow-hidden"
+    >
+      {/* Parallax Background Layer */}
+      <motion.div 
+        className="absolute inset-0 overflow-hidden"
+        style={{ y: backgroundY }}
+      >
+        <motion.img 
           src={backgroundImage} 
           alt={`${title} - HarmonyHub Virtual Instruments`}
-          className="w-full h-full object-cover transition-transform duration-[30s] hover:scale-110" 
+          className="w-full h-[120%] object-cover transition-transform duration-[30s] hover:scale-110" 
           loading="eager"
+          style={{
+            x: mousePosition.x * -20,
+            y: mousePosition.y * -20,
+          }}
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-black/85 via-black/60 to-black/40"></div>
-        <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
+        {/* Multi-layer gradient overlays for depth */}
+        <div className="absolute inset-0 bg-gradient-to-r from-black/90 via-black/60 to-black/30"></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent"></div>
+        <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-transparent"></div>
+      </motion.div>
+      
+      {/* Animated depth layers - Floating orbs with parallax */}
+      <motion.div 
+        className="absolute top-1/4 right-[10%] w-96 h-96 bg-primary/20 rounded-full blur-3xl"
+        style={{ 
+          y: orb1Y,
+          x: mousePosition.x * 30,
+        }}
+        animate={{
+          scale: [1, 1.2, 1],
+          opacity: [0.3, 0.5, 0.3],
+        }}
+        transition={{
+          duration: 4,
+          repeat: Infinity,
+          ease: "easeInOut"
+        }}
+      />
+      
+      <motion.div 
+        className="absolute bottom-1/3 left-[5%] w-72 h-72 bg-accent/20 rounded-full blur-3xl"
+        style={{ 
+          y: orb2Y,
+          x: mousePosition.x * -25,
+        }}
+        animate={{
+          scale: [1.1, 1, 1.1],
+          opacity: [0.4, 0.2, 0.4],
+        }}
+        transition={{
+          duration: 3,
+          repeat: Infinity,
+          ease: "easeInOut",
+          delay: 1
+        }}
+      />
+      
+      <motion.div 
+        className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-primary/10 rounded-full blur-3xl"
+        style={{ 
+          y: orb3Y,
+        }}
+        animate={{
+          scale: [1, 1.15, 1],
+          opacity: [0.2, 0.35, 0.2],
+        }}
+        transition={{
+          duration: 5,
+          repeat: Infinity,
+          ease: "easeInOut",
+          delay: 0.5
+        }}
+      />
+      
+      {/* Musical notes floating effect */}
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        {[...Array(8)].map((_, i) => (
+          <motion.div
+            key={i}
+            className="absolute text-white/10 text-4xl md:text-6xl"
+            style={{
+              left: `${10 + i * 12}%`,
+              top: `${20 + (i % 3) * 25}%`,
+            }}
+            animate={{
+              y: [-20, 20, -20],
+              x: [-10, 10, -10],
+              rotate: [-5, 5, -5],
+              opacity: [0.05, 0.15, 0.05],
+            }}
+            transition={{
+              duration: 4 + i * 0.5,
+              repeat: Infinity,
+              ease: "easeInOut",
+              delay: i * 0.3
+            }}
+          >
+            ♪
+          </motion.div>
+        ))}
       </div>
       
-      <div className="container mx-auto px-6 relative z-10">
+      {/* Content Layer with parallax */}
+      <motion.div 
+        className="container mx-auto px-6 relative z-10"
+        style={{ y: contentY, opacity }}
+      >
         <div className="max-w-3xl">
-          <h1 className="text-3xl md:text-5xl lg:text-7xl font-heading font-bold text-white leading-tight animate-fade-in drop-shadow-2xl">
+          <motion.h1 
+            className="text-3xl md:text-5xl lg:text-7xl font-heading font-bold text-white leading-tight drop-shadow-2xl"
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
+          >
             {title}
-          </h1>
-          <p className="text-lg md:text-xl lg:text-2xl text-gray-50 mt-4 md:mt-6 max-w-2xl animate-fade-in drop-shadow-lg" style={{ animationDelay: '0.2s' }}>
+          </motion.h1>
+          
+          <motion.p 
+            className="text-lg md:text-xl lg:text-2xl text-gray-50 mt-4 md:mt-6 max-w-2xl drop-shadow-lg"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
+          >
             {subtitle}
-          </p>
-          <div className="mt-8 md:mt-12 animate-fade-in flex gap-4 flex-wrap" style={{ animationDelay: '0.4s' }}>
+          </motion.p>
+          
+          <motion.div 
+            className="mt-8 md:mt-12 flex gap-4 flex-wrap"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.4, ease: "easeOut" }}
+          >
             <Link to={ctaLink}>
               <Button className="rounded-xl text-base md:text-lg px-6 md:px-8 py-3 md:py-7 flex items-center gap-3 group hover:scale-105 active:scale-95 transition-all duration-300 shadow-xl hover:shadow-2xl bg-gradient-bg-primary hover:opacity-90">
                 {ctaText}
@@ -66,15 +208,27 @@ const HeroSection = ({
                 </Button>
               </Link>
             )}
-          </div>
+          </motion.div>
         </div>
-      </div>
+      </motion.div>
       
-      {/* Animated accent elements */}
-      <div className="absolute bottom-0 left-0 w-full h-32 bg-gradient-to-t from-black/30 to-transparent"></div>
-      <div className="absolute top-1/4 right-[10%] w-96 h-96 bg-primary/20 rounded-full blur-3xl animate-glow"></div>
-      <div className="absolute bottom-1/3 left-[5%] w-72 h-72 bg-accent/20 rounded-full blur-3xl animate-glow" style={{ animationDuration: '3s', animationDelay: '1s' }}></div>
-      <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-primary/10 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '5s' }}></div>
+      {/* Bottom gradient fade */}
+      <div className="absolute bottom-0 left-0 w-full h-32 bg-gradient-to-t from-background to-transparent"></div>
+      
+      {/* Scroll indicator */}
+      <motion.div 
+        className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-10"
+        animate={{ y: [0, 10, 0] }}
+        transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+      >
+        <div className="w-6 h-10 rounded-full border-2 border-white/30 flex justify-center pt-2">
+          <motion.div 
+            className="w-1.5 h-3 bg-white/50 rounded-full"
+            animate={{ y: [0, 12, 0], opacity: [1, 0, 1] }}
+            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+          />
+        </div>
+      </motion.div>
     </section>
   );
 };
