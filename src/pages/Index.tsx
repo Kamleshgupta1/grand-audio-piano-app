@@ -6,13 +6,13 @@ import InstrumentCard from '@/components/layout/InstrumentCard';
 import QuickAccessPanel from '@/components/ui-components/QuickAccessPanel';
 import FloatingMusicNotes from '@/components/ui-components/FloatingMusicNotes';
 import GamificationPanel from '@/components/ui-components/GamificationPanel';
-import InstrumentComparison from '@/components/ui-components/InstrumentComparison';
-import SkeletonCard from '@/components/ui-components/SkeletonCard';
-import { useFavorites } from '@/hooks/useFavorites';
-import { useGamification } from '@/hooks/useGamification';
+import SocialPanel from '@/components/social/SocialPanel';
+import { usePersistentFavorites } from '@/hooks/usePersistentFavorites';
+import { usePersistentGamification } from '@/hooks/usePersistentGamification';
+import { useAuth } from '@/hooks/useAuth';
 
 import { Button } from '@/components/ui/button';
-import { Wind, Music2, Mic, Volume2, Piano, Guitar, Music, FileMusic, Drum, MicVocal, ArrowRight, Trophy, BadgeDollarSign, ShieldCheck, Headphones, GemIcon, Star } from 'lucide-react';
+import { Wind, Music2, Mic, Volume2, Piano, Guitar, Music, FileMusic, Drum, MicVocal, ArrowRight, Trophy, BadgeDollarSign, ShieldCheck, Headphones, GemIcon, Star, Users } from 'lucide-react';
 import AppLayout from '@/components/layout/AppLayout';
 
 const premiumFeatures = [
@@ -102,8 +102,9 @@ const featuredInstruments = [
 ];
 
 const Index = () => {
-  const { addToRecent } = useFavorites();
-  const { recordPractice } = useGamification();
+  const { user } = useAuth();
+  const { addToRecent } = usePersistentFavorites();
+  const { recordPractice } = usePersistentGamification();
 
   // Track page view
   useEffect(() => {
@@ -142,8 +143,10 @@ const Index = () => {
               </div>
               
               {/* Gamification Panel - Sidebar */}
-              <div className="lg:col-span-1">
+              <div className="lg:col-span-1 space-y-6">
                 <GamificationPanel />
+                {/* Social Panel - Community Features */}
+                <SocialPanel />
               </div>
             </div>
           </div>

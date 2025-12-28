@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import { Clock, Heart, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useFavorites } from '@/hooks/useFavorites';
+import { usePersistentFavorites } from '@/hooks/usePersistentFavorites';
 import { cn } from '@/lib/utils';
 
 interface QuickAccessPanelProps {
@@ -31,7 +31,7 @@ const instrumentNames: Record<string, string> = {
 };
 
 const QuickAccessPanel = ({ className }: QuickAccessPanelProps) => {
-  const { favorites, recentInstruments, clearRecent, toggleFavorite } = useFavorites();
+  const { favorites, recentInstruments, clearRecent, toggleFavorite } = usePersistentFavorites();
 
   const hasContent = favorites.length > 0 || recentInstruments.length > 0;
 
